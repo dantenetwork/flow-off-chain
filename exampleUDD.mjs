@@ -132,7 +132,7 @@ async function testCDCAddress() {
 async function testMessageItem() {
     const cdcAddress = new mtonflow.CDCAddress([0x11, 0x22, 0x33, 0x44], 4, await fcl.config.get('Profile'));
 
-    const msgItem = new mtonflow.MessageItem("nika", mtonflow.MsgType.cdcVecI128, cdcAddress.get_value(), 
+    const msgItem = new mtonflow.MessageItem("nika", mtonflow.MsgType.cdcAddress, cdcAddress.get_value(), 
                                                 await fcl.config.get('Profile'), 
                                                cdcAddress.get_type());
     
@@ -179,7 +179,43 @@ async function testAnyStructArray() {
 }
 
 async function testMessagePayload() {
+    const cdcAddress = new mtonflow.CDCAddress([0x11, 0x22, 0x33, 0x44], 4, await fcl.config.get('Profile'));
+
+    const msgItem = new mtonflow.MessageItem("nika", mtonflow.MsgType.cdcAddress, cdcAddress.get_value(), 
+                                                await fcl.config.get('Profile'), 
+                                               cdcAddress.get_type());
+
+    const msgItem2 = new mtonflow.MessageItem("my lord", mtonflow.MsgType.cdcVecI128, [998877, 665544], 
+                                                await fcl.config.get('Profile'),
+                                                types.Array(types.Int128));
+
+    const msgItem3 = new mtonflow.MessageItem("alsa", mtonflow.MsgType.cdcVecString, ["hello", "my dear"], 
+                                                await fcl.config.get('Profile'),
+                                                types.Array(types.String));
     
+    const msgItem4 = new mtonflow.MessageItem("ana", mtonflow.MsgType.cdcI128, 123456, 
+                                                await fcl.config.get('Profile'),
+                                                types.Int128);
+
+    const msgPayload = new mtonflow.MessagePayload([msgItem, msgItem2, msgItem3, msgItem4], await fcl.config.get('Profile'));
+
+    const script = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './test/scripts/testMessagePayload.cdc'
+        ),
+        'utf8'
+    );
+
+    let rstData = await flowService.executeScripts({
+        script: script,
+        args: [
+            // fcl.arg(msgPayload.get_value(), msgPayload.get_type())
+            msgPayload.get_fcl_arg()
+        ]    
+    });
+
+    console.log(rstData);
 }
 
 // await testSession();
@@ -187,3 +223,4 @@ async function testMessagePayload() {
 // await testCDCAddress();
 // await testMessageItem();
 // await testAnyStructArray();
+await testMessagePayload();

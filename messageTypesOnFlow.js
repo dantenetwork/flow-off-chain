@@ -209,11 +209,23 @@ var MessageItem = /** @class */ (function () {
         this.valueType = valueType;
     }
     MessageItem.prototype.get_fcl_arg = function () {
+        var value2string = this.value;
+        if ((MsgType.cdcVecI128 == this.type) || (MsgType.cdcVecI64 == this.type) ||
+            (MsgType.cdcVecI32 == this.type) || (MsgType.cdcVecI16 == this.type) ||
+            (MsgType.cdcVecI8 == this.type) || (MsgType.cdcVecU128 == this.type) ||
+            (MsgType.cdcVecU64 == this.type) || (MsgType.cdcVecU32 == this.type) ||
+            (MsgType.cdcVecU16 == this.type) || (MsgType.cdcVecU8 == this.type)) {
+            value2string = value2string.map(function (num) { return String(num); });
+        }
+        else if ((MsgType.cdcString != this.type) && (MsgType.cdcVecString != this.type) &&
+            (MsgType.cdcAddress != this.type)) {
+            value2string = String(value2string);
+        }
         return fcl.arg({
             fields: [
                 { name: "name", value: this.name },
-                { name: "type", value: this.type },
-                { name: "value", value: this.value }
+                { name: "type", value: this.type.toString() },
+                { name: "value", value: value2string }
             ]
         }, types.Struct(this.id, [
             { name: "name", value: types.String },
@@ -222,11 +234,23 @@ var MessageItem = /** @class */ (function () {
         ]));
     };
     MessageItem.prototype.get_value = function () {
+        var value2string = this.value;
+        if ((MsgType.cdcVecI128 == this.type) || (MsgType.cdcVecI64 == this.type) ||
+            (MsgType.cdcVecI32 == this.type) || (MsgType.cdcVecI16 == this.type) ||
+            (MsgType.cdcVecI8 == this.type) || (MsgType.cdcVecU128 == this.type) ||
+            (MsgType.cdcVecU64 == this.type) || (MsgType.cdcVecU32 == this.type) ||
+            (MsgType.cdcVecU16 == this.type) || (MsgType.cdcVecU8 == this.type)) {
+            value2string = value2string.map(function (num) { return String(num); });
+        }
+        else if ((MsgType.cdcString != this.type) && (MsgType.cdcVecString != this.type) &&
+            (MsgType.cdcAddress != this.type)) {
+            value2string = String(value2string);
+        }
         return {
             fields: [
                 { name: "name", value: this.name },
-                { name: "type", value: this.type },
-                { name: "value", value: this.value }
+                { name: "type", value: this.type.toString() },
+                { name: "value", value: value2string }
             ]
         };
     };
@@ -270,13 +294,27 @@ var MessagePayload = /** @class */ (function () {
     MessagePayload.prototype.get_fcl_arg = function () {
         var itemTyps = this.items.map(function (item) { return item.get_type(); });
         var itemValues = this.items.map(function (item) { return item.get_value(); });
-        return fcl.arg(itemValues, types.Array(itemTyps));
+        return fcl.arg({
+            fields: [
+                { name: "items", value: itemValues }
+            ]
+        }, types.Struct(this.id, [
+            { name: "items", value: types.Array(itemTyps) }
+        ]));
     };
     MessagePayload.prototype.get_value = function () {
-        return this.items.map(function (item) { return item.get_type(); });
+        var itemValues = this.items.map(function (item) { return item.get_value(); });
+        return {
+            fields: [
+                { name: "items", value: itemValues }
+            ]
+        };
     };
     MessagePayload.prototype.get_type = function () {
-        return this.items.map(function (item) { return item.get_value(); });
+        var itemTyps = this.items.map(function (item) { return item.get_type(); });
+        return types.Struct(this.id, [
+            { name: "items", value: types.Array(itemTyps) }
+        ]);
     };
     MessagePayload.type_trait = function (moduleAddress) {
         throw ("Cannot trait types from `message item`");

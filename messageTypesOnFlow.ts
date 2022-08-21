@@ -238,11 +238,24 @@ export class MessageItem {
     }
 
     get_fcl_arg() {
+
+        var value2string = this.value;
+        if ((MsgType.cdcVecI128 == this.type) || (MsgType.cdcVecI64 == this.type) || 
+            (MsgType.cdcVecI32 == this.type) || (MsgType.cdcVecI16 == this.type) || 
+            (MsgType.cdcVecI8 == this.type) || (MsgType.cdcVecU128 == this.type) || 
+            (MsgType.cdcVecU64 == this.type) || (MsgType.cdcVecU32 == this.type) || 
+            (MsgType.cdcVecU16 == this.type) || (MsgType.cdcVecU8 == this.type)) {
+            value2string = (value2string as Array<number>).map(num => {return String(num);});
+        } else if ((MsgType.cdcString != this.type) && (MsgType.cdcVecString != this.type) &&
+                    (MsgType.cdcAddress != this.type)) {
+            value2string = String(value2string);
+        }
+
         return fcl.arg({
             fields: [
               {name: "name", value: this.name},
-              {name: "type", value: this.type},
-              {name: "value", value: this.value}
+              {name: "type", value: this.type.toString()},
+              {name: "value", value: value2string}
             ]
         },types.Struct(this.id, [
             {name: "name", value: types.String},
@@ -252,11 +265,23 @@ export class MessageItem {
     }
 
     get_value() {
+        var value2string = this.value;
+        if ((MsgType.cdcVecI128 == this.type) || (MsgType.cdcVecI64 == this.type) || 
+            (MsgType.cdcVecI32 == this.type) || (MsgType.cdcVecI16 == this.type) || 
+            (MsgType.cdcVecI8 == this.type) || (MsgType.cdcVecU128 == this.type) || 
+            (MsgType.cdcVecU64 == this.type) || (MsgType.cdcVecU32 == this.type) || 
+            (MsgType.cdcVecU16 == this.type) || (MsgType.cdcVecU8 == this.type)) {
+            value2string = (value2string as Array<number>).map(num => {return String(num);});
+        } else if ((MsgType.cdcString != this.type) && (MsgType.cdcVecString != this.type) &&
+                    (MsgType.cdcAddress != this.type)) {
+            value2string = String(value2string);
+        }
+
         return {
             fields: [
                 {name: "name", value: this.name},
-                {name: "type", value: this.type},
-                {name: "value", value: this.value}
+                {name: "type", value: this.type.toString()},
+                {name: "value", value: value2string}
             ]
         };
     }
