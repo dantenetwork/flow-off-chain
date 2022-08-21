@@ -310,15 +310,31 @@ export class MessagePayload {
         const itemTyps = this.items.map(item => {return item.get_type();});
         const itemValues = this.items.map(item => {return item.get_value();});
 
-        return fcl.arg(itemValues, types.Array(itemTyps));
+        return fcl.arg({
+            fields: [
+              {name: "items", value: itemValues}
+            ]
+        },types.Struct(this.id, [
+            {name: "items", value: types.Array(itemTyps)}
+        ]));
     }
 
     get_value() {
-        return this.items.map(item => {return item.get_type();});
+        const itemValues = this.items.map(item => {return item.get_value();});
+
+        return {
+            fields: [
+              {name: "items", value: itemValues}
+            ]
+        }
     }
 
     get_type() {
-        return this.items.map(item => {return item.get_value();});
+        const itemTyps = this.items.map(item => {return item.get_type();});
+
+        return types.Struct(this.id, [
+            {name: "items", value: types.Array(itemTyps)}
+        ]);
     }
 
     static type_trait(moduleAddress: string) {
