@@ -182,20 +182,16 @@ async function testMessagePayload() {
     const cdcAddress = new mtonflow.CDCAddress([0x11, 0x22, 0x33, 0x44], 4, await fcl.config.get('Profile'));
 
     const msgItem = new mtonflow.MessageItem("nika", mtonflow.MsgType.cdcAddress, cdcAddress.get_value(), 
-                                                await fcl.config.get('Profile'), 
-                                               cdcAddress.get_type());
+                                                await fcl.config.get('Profile'));
 
     const msgItem2 = new mtonflow.MessageItem("my lord", mtonflow.MsgType.cdcVecI128, [998877, 665544], 
-                                                await fcl.config.get('Profile'),
-                                                types.Array(types.Int128));
+                                                await fcl.config.get('Profile'));
 
     const msgItem3 = new mtonflow.MessageItem("alsa", mtonflow.MsgType.cdcVecString, ["hello", "my dear"], 
-                                                await fcl.config.get('Profile'),
-                                                types.Array(types.String));
+                                                await fcl.config.get('Profile'));
     
     const msgItem4 = new mtonflow.MessageItem("ana", mtonflow.MsgType.cdcI128, 123456, 
-                                                await fcl.config.get('Profile'),
-                                                types.Int128);
+                                                await fcl.config.get('Profile'));
 
     const msgPayload = new mtonflow.MessagePayload([msgItem, msgItem2, msgItem3, msgItem4], await fcl.config.get('Profile'));
 

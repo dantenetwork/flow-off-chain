@@ -195,8 +195,99 @@ var CDCAddress = /** @class */ (function () {
     return CDCAddress;
 }());
 exports.CDCAddress = CDCAddress;
+function value_reflect(value, type) {
+    var value2string = value;
+    if ((MsgType.cdcVecI128 == type) || (MsgType.cdcVecI64 == type) ||
+        (MsgType.cdcVecI32 == type) || (MsgType.cdcVecI16 == type) ||
+        (MsgType.cdcVecI8 == type) || (MsgType.cdcVecU128 == type) ||
+        (MsgType.cdcVecU64 == type) || (MsgType.cdcVecU32 == type) ||
+        (MsgType.cdcVecU16 == type) || (MsgType.cdcVecU8 == type)) {
+        value2string = value2string.map(function (num) { return String(num); });
+    }
+    else if ((MsgType.cdcString != type) && (MsgType.cdcVecString != type) &&
+        (MsgType.cdcAddress != type)) {
+        value2string = String(value2string);
+    }
+    return value2string;
+}
+function type_reflect(type, moduleAddress) {
+    switch (type) {
+        case MsgType.cdcString:
+            return types.String;
+            break;
+        case MsgType.cdcU8:
+            return types.UInt8;
+            break;
+        case MsgType.cdcU16:
+            return types.UInt16;
+            break;
+        case MsgType.cdcU32:
+            return types.UInt32;
+            break;
+        case MsgType.cdcU64:
+            return types.UInt64;
+            break;
+        case MsgType.cdcU128:
+            return types.UInt128;
+            break;
+        case MsgType.cdcI8:
+            return types.Int8;
+            break;
+        case MsgType.cdcI16:
+            return types.Int16;
+            break;
+        case MsgType.cdcI32:
+            return types.Int32;
+            break;
+        case MsgType.cdcI64:
+            return types.Int64;
+            break;
+        case MsgType.cdcI128:
+            return types.Int128;
+            break;
+        case MsgType.cdcVecString:
+            return types.Array(types.String);
+            break;
+        case MsgType.cdcVecU8:
+            return types.Array(types.UInt8);
+            break;
+        case MsgType.cdcVecU16:
+            return types.Array(types.UInt16);
+            break;
+        case MsgType.cdcVecU32:
+            return types.Array(types.UInt32);
+            break;
+        case MsgType.cdcVecU64:
+            return types.Array(types.UInt64);
+            break;
+        case MsgType.cdcVecU128:
+            return types.Array(types.UInt128);
+            break;
+        case MsgType.cdcVecI8:
+            return types.Array(types.Int8);
+            break;
+        case MsgType.cdcVecI16:
+            return types.Array(types.Int16);
+            break;
+        case MsgType.cdcVecI32:
+            return types.Array(types.Int32);
+            break;
+        case MsgType.cdcVecI64:
+            return types.Array(types.Int64);
+            break;
+        case MsgType.cdcVecI128:
+            return types.Array(types.Int128);
+            break;
+        case MsgType.cdcAddress:
+            return CDCAddress.type_trait(moduleAddress);
+            break;
+        default:
+            throw ("Invalid Message Type!");
+            break;
+    }
+}
 var MessageItem = /** @class */ (function () {
-    function MessageItem(name, type, value, moduleAddress, valueType) {
+    function MessageItem(name, type, value, moduleAddress) {
         this.name = name;
         this.type = type;
         this.value = value;
@@ -206,21 +297,10 @@ var MessageItem = /** @class */ (function () {
         else {
             this.id = 'A.' + moduleAddress + '.MessageProtocol.MessageItem';
         }
-        this.valueType = valueType;
+        this.valueType = type_reflect(type, moduleAddress);
     }
     MessageItem.prototype.get_fcl_arg = function () {
-        var value2string = this.value;
-        if ((MsgType.cdcVecI128 == this.type) || (MsgType.cdcVecI64 == this.type) ||
-            (MsgType.cdcVecI32 == this.type) || (MsgType.cdcVecI16 == this.type) ||
-            (MsgType.cdcVecI8 == this.type) || (MsgType.cdcVecU128 == this.type) ||
-            (MsgType.cdcVecU64 == this.type) || (MsgType.cdcVecU32 == this.type) ||
-            (MsgType.cdcVecU16 == this.type) || (MsgType.cdcVecU8 == this.type)) {
-            value2string = value2string.map(function (num) { return String(num); });
-        }
-        else if ((MsgType.cdcString != this.type) && (MsgType.cdcVecString != this.type) &&
-            (MsgType.cdcAddress != this.type)) {
-            value2string = String(value2string);
-        }
+        var value2string = value_reflect(this.value, this.type);
         return fcl.arg({
             fields: [
                 { name: "name", value: this.name },
@@ -234,18 +314,7 @@ var MessageItem = /** @class */ (function () {
         ]));
     };
     MessageItem.prototype.get_value = function () {
-        var value2string = this.value;
-        if ((MsgType.cdcVecI128 == this.type) || (MsgType.cdcVecI64 == this.type) ||
-            (MsgType.cdcVecI32 == this.type) || (MsgType.cdcVecI16 == this.type) ||
-            (MsgType.cdcVecI8 == this.type) || (MsgType.cdcVecU128 == this.type) ||
-            (MsgType.cdcVecU64 == this.type) || (MsgType.cdcVecU32 == this.type) ||
-            (MsgType.cdcVecU16 == this.type) || (MsgType.cdcVecU8 == this.type)) {
-            value2string = value2string.map(function (num) { return String(num); });
-        }
-        else if ((MsgType.cdcString != this.type) && (MsgType.cdcVecString != this.type) &&
-            (MsgType.cdcAddress != this.type)) {
-            value2string = String(value2string);
-        }
+        var value2string = value_reflect(this.value, this.type);
         return {
             fields: [
                 { name: "name", value: this.name },
