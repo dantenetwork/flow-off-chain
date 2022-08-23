@@ -1,4 +1,4 @@
-import ReceivedMessageContract from "../../contracts/ReceivedMessageContract.cdc"
+import ReceivedMessageContract from 0xProfile
 
 transaction(id: UInt128, 
             fromChain: String,

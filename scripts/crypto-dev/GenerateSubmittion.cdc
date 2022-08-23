@@ -1,6 +1,6 @@
-import ReceivedMessageContract from "../../contracts/ReceivedMessageContract.cdc"
-import MessageProtocol from "../../contracts/MessageProtocol.cdc"
-import IdentityVerification from "../../contracts/IdentityVerification.cdc"
+import ReceivedMessageContract from 0xProfile
+import MessageProtocol from 0xProfile
+import IdentityVerification from 0xProfile
 
 pub struct createdData {
     pub let originMessage: ReceivedMessageContract.ReceivedMessageCore;
