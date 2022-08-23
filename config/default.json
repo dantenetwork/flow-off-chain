@@ -1,0 +1,16 @@
+{
+  "scanInterval": 10,
+  "logLevel": "debug",
+  "secret": "config/.secret",
+  "networks": {
+    "FLOW": {
+      "nodeAddress": "wss://rpc.shibuya.astar.network",
+      "crossChainContractAddress": "YoF56GBPEGKKeokDzLxwsZyYsmCaWYPQ7eiiqdGtAZRswdd",
+      "abiPath": "./cross_chain.json",
+      "compatibleChain": "ethereum",
+      "receiveChains": [
+        "FUJI"
+      ]
+    }
+  }
+}
