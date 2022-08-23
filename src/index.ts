@@ -5,10 +5,9 @@ import * as fs from "fs"
 import * as path from "path"
 import logger from './utils/logger'
 import { relayerMgr } from "./crossChain/relayerMgr"
-import { FlowService } from './flowoffchain'
+import { FlowService } from './basic/flow/flowoffchain'
 const config = require('config');
-const chainHandlerMgr = require('./basic/chainHandlerMgr');
-//  const relayerMgr = require('./crossChain/relayerMgr');
+import { chainHandlerMgr } from './basic/chainHandlerMgr';
 
 const sentMessageContractPath = '"../../contracts/SentMessageContract.cdc"'
 const crossChainTokenPath = '"../../contracts/CrossChain.cdc"'
@@ -54,7 +53,7 @@ function sleep(ms: number) {
 
 async function init() {
   await chainHandlerMgr.init();
-  // await relayerMgr.init();
+  await relayerMgr.init();
 }
 
 async function main() {
@@ -73,8 +72,7 @@ async function main() {
       }
     }
     logger.info(`Waiting for ${config.get('scanInterval')} seconds...`);
-    // await sleep(config.get('scanInterval'));
-    await sleep(1000 * 4)
+    await sleep(1000 * config.get('scanInterval'))
   }
 }
 

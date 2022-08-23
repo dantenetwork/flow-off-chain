@@ -1,9 +1,8 @@
-'use strict';
 const config = require('config');
-
 import logger from '../utils/logger'
 
-class chainHandlerMgr {
+class ChainHandlerMgr {
+    chainHandlers = {}
     constructor() {
         this.chainHandlers = {};
     }
@@ -11,13 +10,13 @@ class chainHandlerMgr {
     async init() {
         logger.info("Init chainHandlerMgr");
         let networks = config.get('networks');
-        for (let i in networks) {
-            let network = networks[i];
-            let handler = require('./' + network['compatibleChain'] + '/index');
-            let inst = new handler(i);
-            this.chainHandlers[i] = inst;
-            await inst.init();
-        }
+        // for (let i in networks) {
+        //     let network = networks[i];
+        //     let handler = require('./' + network['compatibleChain'] + '/index');
+        //     let inst = new handler(i);
+        //     this.chainHandlers[i] = inst;
+        //     await inst.init();
+        // }
     }
 
     getHandlerByName(name_) {
@@ -29,5 +28,8 @@ class chainHandlerMgr {
     }
 }
 
-let mgr = new chainHandlerMgr();
-module.exports = mgr;
+let chainHandlerMgr = new ChainHandlerMgr();
+
+export {
+    chainHandlerMgr
+}

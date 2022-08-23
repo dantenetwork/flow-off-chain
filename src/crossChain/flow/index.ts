@@ -47,4 +47,4 @@ class FlowRelayer {
     }
 }
 
-module.exports = FlowRelayer;
+export { FlowRelayer }

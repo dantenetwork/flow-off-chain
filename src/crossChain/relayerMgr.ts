@@ -1,17 +1,19 @@
-
+const config = require('config');
+import logger from "../utils/logger";
+import { FlowRelayer } from "./flow/index"
 class RelayerMgr {
     relayers = [];
     async init() {
-        // logger.info("Init relayerMgr");
-        //  let networks = config.get('networks');
-        let networks: Array<string> = ['ethereum', 'bsc'];
+        logger.info("Init relayerMgr");
+        let networks = config.get('networks');
         for (let i in networks) {
-            // let network = networks[i];
-            // let relayer = require('./' + network['compatibleChain'] + '/index');
-            let inst
-            this.relayers[0] = inst;
-            // await inst.init();
-            // await utils.sleep(1);
+            let network = networks[i];
+            // console.log(network)
+            if (network['compatibleChain'] == "FLOW") {
+                let relayer = new FlowRelayer("FLOW")
+                this.relayers[0] = relayer;
+                await relayer.init();
+            }
         }
 
     }

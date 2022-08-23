@@ -9,7 +9,7 @@
       "abiPath": "./cross_chain.json",
       "compatibleChain": "ethereum",
       "receiveChains": [
-        "FUJI"
+        "FLOW"
       ]
     }
   }
