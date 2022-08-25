@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.MessagePayload = exports.MessageItem = exports.CDCAddress = exports.MsgType = exports.SQoSItemArray = exports.SQoSItem = exports.SQoSType = void 0;
+exports.Session = exports.MessagePayload = exports.MessageItem = exports.CDCAddress = exports.MsgType = exports.SQoSItemArray = exports.SQoSItem = exports.SQoSType = void 0;
 var fcl = require("@onflow/fcl");
 var types = require("@onflow/types");
 var SQoSType;
@@ -391,3 +391,9 @@ var MessagePayload = /** @class */ (function () {
     return MessagePayload;
 }());
 exports.MessagePayload = MessagePayload;
+var Session = /** @class */ (function () {
+    function Session() {
+    }
+    return Session;
+}());
+exports.Session = Session;

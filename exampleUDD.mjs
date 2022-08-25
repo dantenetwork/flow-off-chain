@@ -193,7 +193,10 @@ async function testMessagePayload() {
     const msgItem4 = new mtonflow.MessageItem("ana", mtonflow.MsgType.cdcI128, 123456, 
                                                 await fcl.config.get('Profile'));
 
-    const msgPayload = new mtonflow.MessagePayload([msgItem, msgItem2, msgItem3, msgItem4], await fcl.config.get('Profile'));
+    const msgItem5 = new mtonflow.MessageItem("greeting", mtonflow.MsgType.cdcString, 'asdf', 
+                                                await fcl.config.get('Profile'));
+
+    const msgPayload = new mtonflow.MessagePayload([msgItem, msgItem2, msgItem3, msgItem4, msgItem5], await fcl.config.get('Profile'));
 
     const script = fs.readFileSync(
         path.join(
@@ -216,7 +219,8 @@ async function testMessagePayload() {
 
 async function testMessageRawdata() {
 
-    const InputSQoSArray = new mtonflow.SQoSItemArray([], await fcl.config.get('Profile'));
+    const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, [0x12, 0x34, 0x56, 0x78], await fcl.config.get('Profile'));
+    const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
 
     const msgItem = new mtonflow.MessageItem("greeting", mtonflow.MsgType.cdcString, 'asdf', 
                                                 await fcl.config.get('Profile'));
@@ -232,25 +236,30 @@ async function testMessageRawdata() {
     );
 
     try {
-        
+
+        const addr = Buffer.alloc(8, 0);
+        addr[addr.length - 1] = 0x34;
+        addr[addr.length - 2] = 0x12;
+
         let rstData = await flowService.executeScripts({
             script: script,
             args: [
                 fcl.arg('1', types.UInt128),
                 fcl.arg('POLKADOT', types.String),
-                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')), types.Array(types.UInt8)),
-                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')), types.Array(types.UInt8)),
+                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
+                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
                 InputSQoSArray.get_fcl_arg(),
-                fcl.arg('0x0000000000000000', types.Address),
-                fcl.arg('00000000', types.String),
+                fcl.arg('0x' + addr.toString('hex'), types.Address),
+                // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
+                fcl.arg(Buffer.from([0x12, 0x34, 0x56, 0x78]).toString(), types.String),
                 msgPayload.get_fcl_arg(),
                 fcl.arg({
                     fields: [
                         {name: "id", value: String(0)},
                         {name: "type", value: String('0')},
-                        {name: "callback", value: null},
-                        {name: "commitment", value: null},
-                        {name: "answer", value: null}
+                        {name: "callback", value: [0x11, 0x11, 0x11, 0x11].map(num => {return String(num);})},
+                        {name: "commitment", value: [0x22].map(num => {return String(num);})},
+                        {name: "answer", value: [0x33].map(num => {return String(num);})}
                         ]
                     },types.Struct(`A.${await fcl.config.get('Profile')}.MessageProtocol.Session`, [
                         {name: "id", value: types.UInt128},
@@ -263,11 +272,23 @@ async function testMessageRawdata() {
             ]    
         });
     
-        console.log(rstData);
+        // console.log('rstData: ' + rstData.rawData.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), ''));
+        console.log(rstData.rawData);
 
     } catch (error) {
         console.error(error);
     }
+}
+
+async function testSimple() {
+    const a = [16, 10, 8];
+    console.log('rstData: ' + a.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), ''));
+
+    const addr = Buffer.alloc(32, 0);
+    addr[31] = 0x34;
+    addr[30] = 0x12;
+
+    console.log('0x' + addr.toString('hex'));
 }
 
 // await testSession();
@@ -277,3 +298,4 @@ async function testMessageRawdata() {
 // await testAnyStructArray();
 // await testMessagePayload();
 await testMessageRawdata();
+// await testSimple();

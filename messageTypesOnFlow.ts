@@ -439,3 +439,7 @@ export class MessagePayload {
     }
 }
 
+
+export class Session {
+    
+}
