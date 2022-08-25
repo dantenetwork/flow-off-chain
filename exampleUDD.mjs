@@ -66,7 +66,7 @@ async function testSession() {
                 fields: [
                   {name: "id", value: String(128)},
                   {name: "type", value: String(18)},
-                  {name: "callback", value: [1, 1].map(num => {return String(num);})},
+                  {name: "callback", value: null},
                   {name: "commitment", value: [2, 2].map(num => {return String(num);})},
                   {name: "answer", value: [3, 3].map(num => {return String(num);})}
                 ]
@@ -214,9 +214,66 @@ async function testMessagePayload() {
     console.log(rstData);
 }
 
+async function testMessageRawdata() {
+
+    const InputSQoSArray = new mtonflow.SQoSItemArray([], await fcl.config.get('Profile'));
+
+    const msgItem = new mtonflow.MessageItem("greeting", mtonflow.MsgType.cdcString, 'asdf', 
+                                                await fcl.config.get('Profile'));
+
+    const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
+
+    const script = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/crypto-dev/GenerateSubmittion.cdc'
+        ),
+        'utf8'
+    );
+
+    try {
+        
+        let rstData = await flowService.executeScripts({
+            script: script,
+            args: [
+                fcl.arg('1', types.UInt128),
+                fcl.arg('POLKADOT', types.String),
+                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')), types.Array(types.UInt8)),
+                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')), types.Array(types.UInt8)),
+                InputSQoSArray.get_fcl_arg(),
+                fcl.arg('0x0000000000000000', types.Address),
+                fcl.arg('00000000', types.String),
+                msgPayload.get_fcl_arg(),
+                fcl.arg({
+                    fields: [
+                        {name: "id", value: String(0)},
+                        {name: "type", value: String('0')},
+                        {name: "callback", value: null},
+                        {name: "commitment", value: null},
+                        {name: "answer", value: null}
+                        ]
+                    },types.Struct(`A.${await fcl.config.get('Profile')}.MessageProtocol.Session`, [
+                        {name: "id", value: types.UInt128},
+                        {name: "type", value: types.UInt8},
+                        {name: "callback", value: types.Optional(types.Array(types.UInt8))},
+                        {name: "commitment", value: types.Optional(types.Array(types.UInt8))},
+                        {name: "answer", value: types.Optional(types.Array(types.UInt8))}
+                ])),
+                fcl.arg('0x11223344', types.Address)
+            ]    
+        });
+    
+        console.log(rstData);
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 // await testSession();
 // await testSQoS();
 // await testCDCAddress();
 // await testMessageItem();
 // await testAnyStructArray();
-await testMessagePayload();
+// await testMessagePayload();
+await testMessageRawdata();

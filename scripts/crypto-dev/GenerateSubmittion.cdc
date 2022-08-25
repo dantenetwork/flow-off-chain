@@ -4,9 +4,10 @@ import IdentityVerification from 0xProfile
 
 pub struct createdData {
     pub let originMessage: ReceivedMessageContract.ReceivedMessageCore;
-    pub let toBeSign: String;
+    pub let rawData: [UInt8];
+    pub let toBeSign: [UInt8];
 
-    init(srcMessage: ReceivedMessageContract.ReceivedMessageCore, rawData: String, toBeSign: String) {
+    init(srcMessage: ReceivedMessageContract.ReceivedMessageCore, rawData: [UInt8], toBeSign: [UInt8]) {
         self.originMessage = srcMessage;
         self.rawData = rawData;
         self.toBeSign = toBeSign;
@@ -43,5 +44,5 @@ pub fun main(
     let originData: [UInt8] = msgSubmitter.toBytes().concat(n.toBigEndianBytes()).concat(recvMsg.getRecvMessageHash());
 
     // return createdDatarawData: receivedMessageCore.messageHash, toBeSign: String.encodeHex(originData));
-    return createdData(srcMessage: recvMsg, toBeSign: String.encodeHex(originData));
+    return createdData(srcMessage: recvMsg, rawData: recvMsg.toBytes(), toBeSign: originData);
 }
