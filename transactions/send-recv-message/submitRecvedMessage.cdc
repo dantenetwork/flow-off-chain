@@ -1,4 +1,5 @@
 import ReceivedMessageContract from 0xProfile
+import MessageProtocol from 0xProfile
 
 transaction(id: UInt128, 
             fromChain: String,
@@ -10,7 +11,9 @@ transaction(id: UInt128,
             data: MessageProtocol.MessagePayload,
             session: MessageProtocol.Session, 
             msgSubmitter: Address,
-            signature: String
+            signature: String,
+            recverAddress: Address,
+            recverLink: String
 ){
     let signer: AuthAccount;
 
@@ -29,11 +32,11 @@ transaction(id: UInt128,
                                                                 data: data, 
                                                                 session: session);
 
-        if let recverRef = ReceivedMessageContract.getRecverRef(recverAddress: resourceAccount, link: link) {
+        if let recverRef = ReceivedMessageContract.getRecverRef(recverAddress: recverAddress, link: recverLink) {
             recverRef.submitRecvMessage(
                 recvMsg: recvMsg, 
                 pubAddr: msgSubmitter, 
-                signatureAlgorithm: SignatureAlgorithm.ECDSA_secp256k1, 
+                signatureAlgorithm: SignatureAlgorithm.ECDSA_P256, 
                 signature: signature.decodeHex()
             );
         } else {
