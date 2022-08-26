@@ -66,7 +66,7 @@ async function testSession() {
                 fields: [
                   {name: "id", value: String(128)},
                   {name: "type", value: String(18)},
-                  {name: "callback", value: null},
+                  {name: "callback", value: undefined},
                   {name: "commitment", value: [2, 2].map(num => {return String(num);})},
                   {name: "answer", value: [3, 3].map(num => {return String(num);})}
                 ]
@@ -227,6 +227,8 @@ async function testMessageRawdata() {
 
     const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
 
+    const session = new mtonflow.Session(0, 0, await fcl.config.get('Profile'), new Uint8Array([0x11, 0x11, 0x11, 0x11]), new Uint8Array([0x22]), new Uint8Array([0x33])); 
+
     const script = fs.readFileSync(
         path.join(
             process.cwd(),
@@ -253,27 +255,62 @@ async function testMessageRawdata() {
                 // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
                 fcl.arg(Buffer.from([0x12, 0x34, 0x56, 0x78]).toString(), types.String),
                 msgPayload.get_fcl_arg(),
-                fcl.arg({
-                    fields: [
-                        {name: "id", value: String(0)},
-                        {name: "type", value: String('0')},
-                        {name: "callback", value: [0x11, 0x11, 0x11, 0x11].map(num => {return String(num);})},
-                        {name: "commitment", value: [0x22].map(num => {return String(num);})},
-                        {name: "answer", value: [0x33].map(num => {return String(num);})}
-                        ]
-                    },types.Struct(`A.${await fcl.config.get('Profile')}.MessageProtocol.Session`, [
-                        {name: "id", value: types.UInt128},
-                        {name: "type", value: types.UInt8},
-                        {name: "callback", value: types.Optional(types.Array(types.UInt8))},
-                        {name: "commitment", value: types.Optional(types.Array(types.UInt8))},
-                        {name: "answer", value: types.Optional(types.Array(types.UInt8))}
-                ])),
+                session.get_fcl_arg(),
                 fcl.arg('0x11223344', types.Address)
             ]    
         });
     
         // console.log('rstData: ' + rstData.rawData.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), ''));
         console.log(rstData.rawData);
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function testMessageSent() {
+    const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, [0x12, 0x34, 0x56, 0x78], await fcl.config.get('Profile'));
+    const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
+
+    const msgItem = new mtonflow.MessageItem("greeting", mtonflow.MsgType.cdcString, 'asdf', 
+                                                await fcl.config.get('Profile'));
+
+    const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
+
+    const session = new mtonflow.Session(0, 0, await fcl.config.get('Profile'), new Uint8Array([0x11, 0x11, 0x11, 0x11]), new Uint8Array([0x22]), new Uint8Array([0x33])); 
+
+    const script = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './test/scripts/testSentMessageFromFlow.cdc'
+        ),
+        'utf8'
+    );
+
+    try {
+
+        const addr = Buffer.alloc(32, 0);
+        addr[addr.length - 1] = 0x34;
+        addr[addr.length - 2] = 0x12;
+
+        let rstData = await flowService.executeScripts({
+            script: script,
+            args: [
+                fcl.arg('1', types.UInt128),
+                fcl.arg('POLKADOT', types.String),
+                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
+                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
+                InputSQoSArray.get_fcl_arg(),
+                fcl.arg(Array.from(addr).map(num => {return String(num);}), types.Array(types.UInt8)),
+                // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
+                fcl.arg(Array.from([0x12, 0x34, 0x56, 0x78]).map(num => {return String(num);}), types.Array(types.UInt8)),
+                msgPayload.get_fcl_arg(),
+                session.get_fcl_arg()
+            ]    
+        });
+    
+        // console.log('rstData: ' + rstData.rawData.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), ''));
+        console.log(Buffer.from(rstData.rawData, 'utf-8').toString('hex'));
 
     } catch (error) {
         console.error(error);
@@ -289,6 +326,11 @@ async function testSimple() {
     addr[30] = 0x12;
 
     console.log('0x' + addr.toString('hex'));
+
+    const b = ['1', '73', '99'];
+    // `b` will be transferred into numbers `[1, 73, 99]` as following
+    const bBuf = Buffer.from(b, 'utf8');
+    console.log(Array.from(bBuf));
 }
 
 // await testSession();
@@ -297,5 +339,6 @@ async function testSimple() {
 // await testMessageItem();
 // await testAnyStructArray();
 // await testMessagePayload();
-await testMessageRawdata();
+// await testMessageRawdata();
+await testMessageSent();
 // await testSimple();
