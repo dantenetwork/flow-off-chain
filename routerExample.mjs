@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 
 import * as mtonflow from './messageTypesOnFlow.js';
+import oc from './omnichainCrypto.js'
 
 const sha3_256FromString = (msg) => {
     const sha = new SHA3(256);
@@ -132,7 +133,9 @@ async function testSubmit() {
                 session.get_fcl_arg(),
                 fcl.arg('0xf8d6e0586b0a20c7', types.Address),
                 fcl.arg(signature, types.String),
+                // In official version, the address below shall be the same as `resourceAccount`
                 fcl.arg('0xf8d6e0586b0a20c7', types.Address),
+                // and the link shall be got from `CrossChain.registeredRecvAccounts`
                 fcl.arg('myRecver', types.String)
             ]
         });
@@ -159,6 +162,15 @@ async function testSignatureToNormalString() {
     console.log(sha.digest());
     sha.update(Buffer.from(msgBuf, 'hex'));
     console.log(sha.digest());
+
+    // Check `omnichainCrypto`
+    const keyPair = ['bb499b3527649d37f86d4a16e83aae2f9bd64de510077cf8c5fcb12eafc96c93a0425ac965ce4eb2cc2dd5a350569f10035b4308aadfc544415ddc812f919025', 
+                        '69e7e51ead557351ade7a575e947c4d4bd19dd8a6cdf00c51f9c7f6f721b72dc'];
+    const testOC = new oc.OmnichainCrypto(sha3_256FromString, 'p256', keyPair);
+
+    const signatureOC = testOC.sign2hexstring(msgBuf)
+    console.log(signatureOC);
+    console.log(testOC.verify(msgBuf, testOC.sign(msgBuf)));
 }
 
 // await testRegister();
