@@ -1,5 +1,5 @@
-import ReceivedMessageContract from "../../contracts/ReceivedMessageContract.cdc"
-import SettlementContract from "../../contracts/Settlement.cdc"
+import ReceivedMessageContract from 0xProfile
+import SettlementContract from 0xProfile
 
 transaction {
     prepare(acct: AuthAccount) {

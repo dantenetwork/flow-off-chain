@@ -1,9 +1,10 @@
-import ReceivedMessageContract from "../../contracts/ReceivedMessageContract.cdc"
-import MessageProtocol from "../../contracts/MessageProtocol.cdc"
-import IdentityVerification from "../../contracts/IdentityVerification.cdc"
+import ReceivedMessageContract from 0xProfile
+import MessageProtocol from 0xProfile
+import IdentityVerification from 0xProfile
 
 pub struct createdData {
     pub let originMessage: ReceivedMessageContract.ReceivedMessageCore;
+    pub let rawData: String;
     pub let toBeSign: String;
 
     init(srcMessage: ReceivedMessageContract.ReceivedMessageCore, rawData: String, toBeSign: String) {
@@ -42,6 +43,16 @@ pub fun main(
     // Encode message bytes
     let originData: [UInt8] = msgSubmitter.toBytes().concat(n.toBigEndianBytes()).concat(recvMsg.getRecvMessageHash());
 
+    // log(MessageProtocol.MsgType.cdcString);
+    // log(MessageProtocol.MsgType(rawValue: 0));
+    // let a: MessageProtocol.MsgType = MessageProtocol.MsgType(rawValue: 0)!;
+    // switch a {
+    //     case MessageProtocol.MsgType.cdcString:
+    //         log("I'm in");
+    //         break;
+    // }
+
     // return createdDatarawData: receivedMessageCore.messageHash, toBeSign: String.encodeHex(originData));
-    return createdData(srcMessage: recvMsg, toBeSign: String.encodeHex(originData));
+    return createdData(srcMessage: recvMsg, rawData: String.encodeHex(recvMsg.toBytes()), toBeSign: String.encodeHex(originData));
 }
+ 

@@ -1,5 +1,5 @@
-import SentMessageContract from "../../contracts/SentMessageContract.cdc"
-import CrossChain from "../../contracts/CrossChain.cdc"
+import SentMessageContract from 0xProfile
+import CrossChain from 0xProfile
 
 pub fun main(messageID: UInt128): SentMessageContract.SentMessageCore? {
     for sendKey in CrossChain.registeredSendAccounts.keys {

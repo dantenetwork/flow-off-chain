@@ -1,5 +1,5 @@
-import ReceivedMessageContract from "../../contracts/ReceivedMessageContract.cdc"
-import CrossChain from "../../contracts/CrossChain.cdc"
+import ReceivedMessageContract from 0xProfile
+import CrossChain from 0xProfile
 
 pub struct NextMessageID {
     pub let id: UInt128;

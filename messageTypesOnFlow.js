@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.MessagePayload = exports.MessageItem = exports.CDCAddress = exports.MsgType = exports.SQoSItemArray = exports.SQoSItem = exports.SQoSType = void 0;
+exports.Session = exports.MessagePayload = exports.MessageItem = exports.CDCAddress = exports.MsgType = exports.SQoSItemArray = exports.SQoSItem = exports.SQoSType = void 0;
 var fcl = require("@onflow/fcl");
 var types = require("@onflow/types");
 var SQoSType;
@@ -391,3 +391,37 @@ var MessagePayload = /** @class */ (function () {
     return MessagePayload;
 }());
 exports.MessagePayload = MessagePayload;
+var Session = /** @class */ (function () {
+    function Session(sessionID, type, moduleAddress, callback, commitment, answer) {
+        this.sessionID = sessionID;
+        this.type = type;
+        if (moduleAddress.startsWith('0x')) {
+            this.id = 'A.' + moduleAddress.slice(2) + '.MessageProtocol.Session';
+        }
+        else {
+            this.id = 'A.' + moduleAddress + '.MessageProtocol.Session';
+        }
+        this.callback = callback;
+        this.commitment = commitment;
+        this.answer = answer;
+    }
+    Session.prototype.get_fcl_arg = function () {
+        return fcl.arg({
+            fields: [
+                { name: "id", value: String(this.sessionID) },
+                { name: "type", value: String(this.type) },
+                { name: "callback", value: this.callback ? Array.from(this.callback).map(function (num) { return String(num); }) : undefined },
+                { name: "commitment", value: this.commitment ? Array.from(this.commitment).map(function (num) { return String(num); }) : undefined },
+                { name: "answer", value: this.answer ? Array.from(this.answer).map(function (num) { return String(num); }) : undefined }
+            ]
+        }, types.Struct(this.id, [
+            { name: "id", value: types.UInt128 },
+            { name: "type", value: types.UInt8 },
+            { name: "callback", value: types.Optional(types.Array(types.UInt8)) },
+            { name: "commitment", value: types.Optional(types.Array(types.UInt8)) },
+            { name: "answer", value: types.Optional(types.Array(types.UInt8)) }
+        ]));
+    };
+    return Session;
+}());
+exports.Session = Session;
