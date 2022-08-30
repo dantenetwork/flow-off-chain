@@ -5,16 +5,16 @@ import logger from "../../utils/logger"
 async function sendMessage(_, toChain) {
     let fromHandler = chainHandlerMgr.getHandlerByName('flow');
     let toHandler = chainHandlerMgr.getHandlerByName(toChain);
-    // query Flow message count
-    const flowSentMessageCount = await fromHandler.querySentMessageCount(toChain);
-
+  
     // query Ethereum next receive message Id
     let nextMessageId = await toHandler.getMsgPortingTask('flow');
     nextMessageId = parseInt(nextMessageId);
+  // query Flow message count
+    const crossMessage = await fromHandler.querySentMessage(toChain, nextMessageId);
 
-    logger.info(`${toChain} <- ${'flow'}: ${flowSentMessageCount} has been sent, next received id will be: ${nextMessageId}`);
+    logger.info(`${toChain} <- ${'flow'}: ${crossMessage} has been sent, next received id will be: ${nextMessageId}`);
 
-    if (nextMessageId <= flowSentMessageCount) {
+    if (nextMessageId <= crossMessage) {
         // get message by id
         let message = await fromHandler.getSentMessageById(toChain, nextMessageId);
         message = utils.snakeToCamel(message);
