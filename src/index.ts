@@ -64,7 +64,7 @@ async function main() {
     for (let i in relayerMgr.relayers) {
       try {
         logger.info(`Dealing messages for chain: ${i}`);
-        // await relayerMgr.relayers[i].sendMessage();
+        await relayerMgr.relayers[i].sendMessage();
         // await relayerMgr.relayers[i].executeMessage();
       }
       catch (e) {
