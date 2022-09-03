@@ -173,6 +173,13 @@ async function testSignatureToNormalString() {
     console.log(testOC.verify(msgBuf, testOC.sign(msgBuf)));
 }
 
+async function signData() {
+    const message = 'f8d6e0586b0a20c701e76589f3e01b0c172d827db6a66d5b5fdfad943adc3b633ff8f85773386b707e';
+    const signature = flowService.sign2string(message);
+    console.log(signature);
+}
+
 // await testRegister();
 // await testSubmit();
-await testSignatureToNormalString();
+// await testSignatureToNormalString();
+await signData();
