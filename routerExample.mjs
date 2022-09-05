@@ -9,6 +9,9 @@ import path from 'path';
 import * as mtonflow from './messageTypesOnFlow.js';
 import oc from './omnichainCrypto.js'
 
+
+const args = process.argv;
+
 const sha3_256FromString = (msg) => {
     const sha = new SHA3(256);
     sha.update(Buffer.from(msg, 'hex'));
@@ -62,11 +65,11 @@ async function testRegister() {
     console.log(response);
 }
 
-async function testSubmit() {
+async function testSubmit(msgID) {
     const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, [0x12, 0x34, 0x56, 0x78], await fcl.config.get('Profile'));
     const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
 
-    const msgItem = new mtonflow.MessageItem("greeting", mtonflow.MsgType.cdcString, 'asdf', 
+    const msgItem = new mtonflow.MessageItem("greeting", mtonflow.MsgType.cdcString, 'hello nika', 
                                                 await fcl.config.get('Profile'));
 
     const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
@@ -90,14 +93,14 @@ async function testSubmit() {
         let rstData = await flowService.executeScripts({
             script: script,
             args: [
-                fcl.arg('1', types.UInt128),
+                fcl.arg(msgID, types.UInt128),
                 fcl.arg('POLKADOT', types.String),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
                 InputSQoSArray.get_fcl_arg(),
-                fcl.arg('0x' + addr.toString('hex'), types.Address),
+                fcl.arg('0x01cf0e2f2f715450', types.Address),
                 // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
-                fcl.arg(Buffer.from([0x12, 0x34, 0x56, 0x78]).toString(), types.String),
+                fcl.arg('GreetingRecver', types.String),
                 msgPayload.get_fcl_arg(),
                 session.get_fcl_arg(),
                 fcl.arg('0xf8d6e0586b0a20c7', types.Address)
@@ -121,14 +124,14 @@ async function testSubmit() {
         let response = await flowService.sendTx({
             transaction: tras,
             args: [
-                fcl.arg('1', types.UInt128),
+                fcl.arg(msgID, types.UInt128),
                 fcl.arg('POLKADOT', types.String),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
                 InputSQoSArray.get_fcl_arg(),
-                fcl.arg('0x' + addr.toString('hex'), types.Address),
+                fcl.arg('0x01cf0e2f2f715450', types.Address),
                 // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
-                fcl.arg(Buffer.from([0x12, 0x34, 0x56, 0x78]).toString(), types.String),
+                fcl.arg('GreetingRecver', types.String),
                 msgPayload.get_fcl_arg(),
                 session.get_fcl_arg(),
                 fcl.arg('0xf8d6e0586b0a20c7', types.Address),
@@ -136,7 +139,7 @@ async function testSubmit() {
                 // In official version, the address below shall be the same as `resourceAccount`
                 fcl.arg('0xf8d6e0586b0a20c7', types.Address),
                 // and the link shall be got from `CrossChain.registeredRecvAccounts`
-                fcl.arg('myRecver', types.String)
+                fcl.arg('receivedMessageVault', types.String)
             ]
         });
     
@@ -180,6 +183,6 @@ async function signData() {
 }
 
 // await testRegister();
-// await testSubmit();
+await testSubmit(args[2]);
 // await testSignatureToNormalString();
-await signData();
+// await signData();
