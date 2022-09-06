@@ -64,13 +64,39 @@ async function simuRegister() {
     console.log(response);
 }
 
-async function submitSimuCompute(msgID, fromChain, contractName, actionName, session, msgPayload) {
-    // console.log(msgID);
+async function submitSimuCompute(fromChain, contractName, actionName, session, msgPayload) {
     // console.log(fromChain);
     // console.log(contractName);
     // console.log(actionName);
     // console.log(session);
     // console.log(msgPayload);
+
+    const scriptID = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/send-recv-message/queryNextSubmitMessage.cdc'
+        ),
+        'utf8'
+    );
+
+    let rstData = await flowService.executeScripts({
+        script: scriptID,
+        args: [
+            fcl.arg('0xf8d6e0586b0a20c7', types.Address)
+        ]
+    });
+
+    var recver = '0x01cf0e2f2f715450';
+    var msgID = 1;
+    for (var eleIdx in rstData[fromChain]) {
+        if (rstData[fromChain][eleIdx].recver == recver) {
+            msgID = Number(rstData[fromChain][eleIdx].id);
+            break;
+        }
+    }
+
+    // console.log(msgID);
+    // return;
 
     const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, [0x12, 0x34, 0x56, 0x78], await fcl.config.get('Profile'));
     const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
@@ -131,7 +157,7 @@ async function submitSimuCompute(msgID, fromChain, contractName, actionName, ses
                 fcl.arg('0xf8d6e0586b0a20c7', types.Address),
                 fcl.arg(signature, types.String),
                 // In official version, the address below shall be the same as `resourceAccount`
-                fcl.arg('0xf8d6e0586b0a20c7', types.Address),
+                fcl.arg(recver, types.Address),
                 // and the link shall be got from `CrossChain.registeredRecvAccounts`
                 fcl.arg('receivedMessageVault', types.String)
             ]
@@ -190,9 +216,122 @@ async function simulateServer(msgID) {
 
     const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
 
-    await submitSimuCompute(msgID, fromChain, contractName, actionName, session, msgPayload);
+    await submitSimuCompute(fromChain, contractName, actionName, session, msgPayload);
+}
+
+async function simuRequest() {
+
+    const scriptID = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/send-recv-message/queryNextSubmitMessage.cdc'
+        ),
+        'utf8'
+    );
+
+    let rstData = await flowService.executeScripts({
+        script: scriptID,
+        args: [
+            fcl.arg('0xf8d6e0586b0a20c7', types.Address)
+        ]
+    });
+
+    var recver = '0x01cf0e2f2f715450';
+    var msgID = 1;
+    const fromChain = 'POLKADOT';
+    for (var eleIdx in rstData[fromChain]) {
+        if (rstData[fromChain][eleIdx].recver == recver) {
+            msgID = Number(rstData[fromChain][eleIdx].id);
+            break;
+        }
+    }
+
+    // console.log(msgID);
+    // return;
+
+    const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, [0x12, 0x34, 0x56, 0x78], await fcl.config.get('Profile'));
+    const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
+
+    const msgItem = new mtonflow.MessageItem("nums", mtonflow.MsgType.cdcVecU32, [11, 12, 13, 14, 15], 
+                                                await fcl.config.get('Profile'));
+
+    const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
+
+    const session = new mtonflow.Session(99, 2, await fcl.config.get('Profile'), new Uint8Array([0x11, 0x11, 0x11, 0x11]), new Uint8Array([0x22]), new Uint8Array([0x33])); 
+
+    const script = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/crypto-dev/GenerateSubmittion.cdc'
+        ),
+        'utf8'
+    );
+
+    const contractName = recver;
+    const actionName = 'computationServer';
+
+    try {
+        let rstData = await flowService.executeScripts({
+            script: script,
+            args: [
+                fcl.arg(msgID, types.UInt128),
+                fcl.arg(fromChain, types.String),
+                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
+                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
+                InputSQoSArray.get_fcl_arg(),
+                fcl.arg(contractName, types.Address),
+                // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
+                fcl.arg(actionName, types.String),
+                msgPayload.get_fcl_arg(),
+                session.get_fcl_arg(),
+                fcl.arg('0xf8d6e0586b0a20c7', types.Address)
+            ]    
+        });
+    
+        console.log(rstData.toBeSign);
+        const toBeSign = rstData.toBeSign;
+        // this can be verified by Flow CLI
+        const signature = flowService.sign2string(toBeSign);
+        console.log(signature);
+
+        const tras = fs.readFileSync(
+            path.join(
+                process.cwd(),
+                './transactions/send-recv-message/submitRecvedMessage.cdc'
+            ),
+            'utf8'
+        );
+    
+        let response = await flowService.sendTx({
+            transaction: tras,
+            args: [
+                fcl.arg(msgID, types.UInt128),
+                fcl.arg(fromChain, types.String),
+                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
+                fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
+                InputSQoSArray.get_fcl_arg(),
+                fcl.arg(contractName, types.Address),
+                // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
+                fcl.arg(actionName, types.String),
+                msgPayload.get_fcl_arg(),
+                session.get_fcl_arg(),
+                fcl.arg('0xf8d6e0586b0a20c7', types.Address),
+                fcl.arg(signature, types.String),
+                // In official version, the address below shall be the same as `resourceAccount`
+                fcl.arg(recver, types.Address),
+                // and the link shall be got from `CrossChain.registeredRecvAccounts`
+                fcl.arg('receivedMessageVault', types.String)
+            ]
+        });
+    
+        console.log(response);
+
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 // await simuRegister();
 
-await simulateServer(args[2]);
+// await simulateServer(args[2]);
+await simuRequest();
