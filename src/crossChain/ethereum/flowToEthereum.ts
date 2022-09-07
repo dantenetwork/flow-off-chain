@@ -1,13 +1,15 @@
-const chainHandlerMgr = require('../../basic/chainHandlerMgr');
+import { chainHandlerMgr } from '../../basic/chainHandlerMgr'
 const utils = require('../../utils/utils');
 import logger from "../../utils/logger"
 
 async function sendMessage(_, toChain) {
+    logger.info(`sendMessage to ${toChain}`)
     let fromHandler = chainHandlerMgr.getHandlerByName('flow');
     let toHandler = chainHandlerMgr.getHandlerByName(toChain);
 
-    let nextMessageId = await toHandler.getMsgPortingTask('flow');
-    nextMessageId = parseInt(nextMessageId);
+    // let nextMessageId = await toHandler.getMsgPortingTask('flow');
+    // nextMessageId = parseInt(nextMessageId);
+    let nextMessageId = 1
     let coreMessage = await fromHandler.getSentMessageById(toChain, nextMessageId);
     logger.info(`${toChain} <- ${'flow'}: ${coreMessage} has been sent, next received id will be: ${nextMessageId}`);
     if (coreMessage) {

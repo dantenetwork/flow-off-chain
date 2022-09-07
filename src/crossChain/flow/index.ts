@@ -8,6 +8,7 @@ class FlowRelayer {
     receiveChains = []
 
     constructor(chainName) {
+        // console.log('FlowRelayer ctor', chainName)
         this.chainName = chainName;
         this.relayers = {};
         this.receiveChains = [];
@@ -16,14 +17,16 @@ class FlowRelayer {
     async init() {
         let networks = config.get('networks');
         let network = networks[this.chainName];
+        // console.log(network)
         logger.info(`Init relayer: ${this.chainName}, compatible chain: ${network.compatibleChain}, receive chains: ${network.receiveChains}"`);
         this.receiveChains = network.receiveChains;
         for (let i = 0; i < this.receiveChains.length; i++) {
-            this.relayers[this.receiveChains[i]] = require('./' + networks[this.receiveChains[i]].compatibleChain + 'ToEthereum');
+            this.relayers[this.receiveChains[i]] = require('./' + networks[this.receiveChains[i]].compatibleChain + 'ToFlow');
         }
     }
 
     async sendMessage() {
+        logger.info(`sendMessage to ${this.chainName}`)
         for (let i in this.relayers) {
             await this.relayers[i].sendMessage(i, this.chainName);
         }

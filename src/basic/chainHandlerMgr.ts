@@ -10,13 +10,14 @@ class ChainHandlerMgr {
     async init() {
         logger.info("Init chainHandlerMgr");
         let networks = config.get('networks');
-        // for (let i in networks) {
-        //     let network = networks[i];
-        //     let handler = require('./' + network['compatibleChain'] + '/index');
-        //     let inst = new handler(i);
-        //     this.chainHandlers[i] = inst;
-        //     await inst.init();
-        // }
+        for (let i in networks) {
+            let network = networks[i];
+            // console.log(network)
+            let handler = require('./' + network['compatibleChain'] + '/index');
+            let inst = new handler(i);
+            this.chainHandlers[i] = inst;
+            await inst.init();
+        }
     }
 
     getHandlerByName(name_) {

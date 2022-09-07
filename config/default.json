@@ -3,14 +3,24 @@
   "logLevel": "debug",
   "secret": "config/.secret",
   "networks": {
-    "FLOW": {
+    "flow": {
       "nodeAddress": "wss://rpc.shibuya.astar.network",
       "crossChainContractAddress": "YoF56GBPEGKKeokDzLxwsZyYsmCaWYPQ7eiiqdGtAZRswdd",
       "abiPath": "./cross_chain.json",
+      "compatibleChain": "flow",
+      "receiveChains": [
+        "ethereum"
+      ]
+    },
+    "ethereum": {
+      "nodeAddress": "https://data-seed-prebsc-1-s1.binance.org:8545",
+      "crossChainContractAddress": "0x5950b420377Ac8128485D54307762FC952e14CD4",
+      "abiPath": "./TwoPhaseCommitCrossChain.json",
       "compatibleChain": "ethereum",
       "receiveChains": [
-        "FLOW"
-      ]
+        "flow"
+      ],
+      "chainId": 97
     }
   }
 }

@@ -1,5 +1,6 @@
 const chainHandlerMgr = require('../../basic/chainHandlerMgr');
 const config = require('config');
+import logger from "../../utils/logger"
 
 class EthereumRelayer {
   chainName: string
@@ -15,7 +16,7 @@ class EthereumRelayer {
   async init() {
     let networks = config.get('networks');
     let network = networks[this.chainName];
-    // logger.info(utils.format("Init relayer: {0}, compatible chain: {1}, receive chains: {2}", this.chainName, network.compatibleChain, network.receiveChains));
+    logger.info(`Init relayer:  ${this.chainName}, compatibleChain chains:${network.compatibleChain}, receive chains:${network.receiveChains}`);
     this.receiveChains = network.receiveChains;
     for (let i = 0; i < this.receiveChains.length; i++) {
       this.relayers[this.receiveChains[i]] = require('./' + networks[this.receiveChains[i]].compatibleChain + 'ToEthereum');

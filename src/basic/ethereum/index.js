@@ -9,6 +9,8 @@ const globalDefine = require('../../utils/globalDefine.js');
 const utils = require('../../utils/utils.js');
 const ErrorCode = globalDefine.ErrorCode.ethereum;
 
+import logger from '../../utils/logger'
+
 const MsgTypeMapToEvm = {
   [globalDefine.MsgType.String]: 'string',
   [globalDefine.MsgType.U8]: 'uint8',
@@ -43,8 +45,11 @@ class EthereumHandler {
     logger.info(utils.format("Init handler: {0}, compatible chain: {1}", this.chainName, "ethereum"));
     this.web3 = new Web3(config.get('networks.' + this.chainName + '.nodeAddress'));
     this.web3.eth.handleRevert = true;
+    // console.log(config)
     let secret = JSON.parse(fs.readFileSync(config.get('secret')));
+    // console.log('secret', secret)
     this.testAccountPrivateKey = secret[this.chainName];
+    // console.log(this.testAccountPrivateKey)
     this.porterAddress = this.web3.eth.accounts.privateKeyToAccount(this.testAccountPrivateKey).address;
     logger.info(utils.format("Porter address is: {0}", this.porterAddress));
     let crossChainContractAddress = config.get('networks.' + this.chainName + '.crossChainContractAddress');
@@ -76,7 +81,7 @@ class EthereumHandler {
         this.crossChainContract, 'getSentMessage', [toChain, id]);
     }
     catch (e) {
-      return {errorCode: ErrorCode.GET_SENT_MESSAGE_ERROR};
+      return { errorCode: ErrorCode.GET_SENT_MESSAGE_ERROR };
     }
 
     logger.debug('Original message and data', crossChainMessage, crossChainMessage.content.data);
@@ -104,14 +109,14 @@ class EthereumHandler {
       sender: crossChainMessage.sender,
       signer: crossChainMessage.signer,
       session: {
-          id: crossChainMessage.session.id,
-          callback: crossChainMessage.session.callback,
+        id: crossChainMessage.session.id,
+        callback: crossChainMessage.session.callback,
       },
       sqos: sqos,
       content: {
-          contract: crossChainMessage.content.contractAddress,
-          action: crossChainMessage.content.action,
-          data: dataRet.data,
+        contract: crossChainMessage.content.contractAddress,
+        action: crossChainMessage.content.action,
+        data: dataRet.data,
       }
     };
 
@@ -120,12 +125,12 @@ class EthereumHandler {
     }
     catch (e) {
       logger.error(e);
-      return {errorCode: ErrorCode.MESSAGE_FORMAT_ERROR};
+      return { errorCode: ErrorCode.MESSAGE_FORMAT_ERROR };
     }
 
     logger.debug('Dealed message', message);
-    
-    return {errorCode: ErrorCode.SUCCESS, data: message};
+
+    return { errorCode: ErrorCode.SUCCESS, data: message };
   }
 
   // get id of message to be ported
@@ -159,7 +164,7 @@ class EthereumHandler {
     if (_id == 0) {
       return null;
     }
-    
+
     const _message = await ethereum.contractCall(
       this.crossChainContract, 'getReceivedMessage', [chainName, _id]);
     return _message;
@@ -188,7 +193,7 @@ class EthereumHandler {
     }
     const messageInfo = [
       message.id, message.fromChain, message.sender, message.signer, sqos, message.content.contract, message.content.action,
-        calldata, [message.session.id, callback], 0, 
+      calldata, [message.session.id, callback], 0,
     ];
 
     // send transaction
@@ -222,7 +227,7 @@ class EthereumHandler {
       catch (e) {
         logger.error(e);
         logger.debug('function_json: {0}', function_json);
-        return {errorCode: ErrorCode.INTERFACE_ERROR};
+        return { errorCode: ErrorCode.INTERFACE_ERROR };
       }
     }
     else {
@@ -234,7 +239,7 @@ class EthereumHandler {
       catch (e) {
         logger.error(e);
         logger.debug('function_json: {0}', function_json);
-        return {errorCode: ErrorCode.INTERFACE_ERROR};
+        return { errorCode: ErrorCode.INTERFACE_ERROR };
       }
     }
 
@@ -246,7 +251,7 @@ class EthereumHandler {
     catch (e) {
       logger.error(e);
       logger.debug('function_json: {0}, data: {1}', function_json, data);
-      return {errorCode: ErrorCode.DATA_FORMAT_ERROR};
+      return { errorCode: ErrorCode.DATA_FORMAT_ERROR };
     }
 
     // encode params by ABI
@@ -257,10 +262,10 @@ class EthereumHandler {
     catch (e) {
       logger.error(e);
       logger.debug('function_json: {0}, dataArray: {1}', function_json, dataArray);
-      return {errorCode: ErrorCode.ABI_ENCODE_ERROR};
+      return { errorCode: ErrorCode.ABI_ENCODE_ERROR };
     }
 
-    return  {errorCode: ErrorCode.SUCCESS, data: calldata};
+    return { errorCode: ErrorCode.SUCCESS, data: calldata };
   }
 
   // encode the data
@@ -278,7 +283,7 @@ class EthereumHandler {
     let argument = [items];
 
     logger.debug('encodedata result is: ', argument);
-    return {errorCode: ErrorCode.SUCCESS, data: argument};
+    return { errorCode: ErrorCode.SUCCESS, data: argument };
   }
 
   // decode data
@@ -295,7 +300,7 @@ class EthereumHandler {
       catch (e) {
         logger.info('Decode data error, payload is: ', payload);
         logger.error(e);
-        return {errorCode: ErrorCode.DECODE_DATA_ERROR};
+        return { errorCode: ErrorCode.DECODE_DATA_ERROR };
       }
       item.msgType = payload.items[i].msgType;
       data.push(item);
@@ -303,7 +308,7 @@ class EthereumHandler {
 
     logger.debug('decodeData: decode result is', data);
 
-    return {errorCode: ErrorCode.SUCCESS, data: data};
+    return { errorCode: ErrorCode.SUCCESS, data: data };
   }
 
   // execute message
