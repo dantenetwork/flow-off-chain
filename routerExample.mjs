@@ -177,12 +177,12 @@ async function testSignatureToNormalString() {
 }
 
 async function signData() {
-    const message = 'f8d6e0586b0a20c701e76589f3e01b0c172d827db6a66d5b5fdfad943adc3b633ff8f85773386b707e';
+    const message = 'f8d6e0586b0a20c701702e32ba59d7c3969d92950396b3635a12b8f8176a2819ed26b383e8fbf8fb04';
     const signature = flowService.sign2string(message);
     console.log(signature);
 }
 
 // await testRegister();
-await testSubmit(args[2]);
+// await testSubmit(args[2]);
 // await testSignatureToNormalString();
-// await signData();
+await signData();

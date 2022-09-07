@@ -24,6 +24,33 @@ const flowService = new FlowService('0xf8d6e0586b0a20c7',
                                     sha3_256FromString,
                                     'p256');
 
+async function getNextSubmittionID(recver, fromChain) {
+    const scriptID = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/send-recv-message/queryNextSubmitMessage.cdc'
+        ),
+        'utf8'
+    );
+
+    let rstData = await flowService.executeScripts({
+        script: scriptID,
+        args: [
+            fcl.arg('0xf8d6e0586b0a20c7', types.Address)
+        ]
+    });
+
+    var msgID = 1;
+    for (var eleIdx in rstData[fromChain]) {
+        if (rstData[fromChain][eleIdx].recver == recver) {
+            msgID = Number(rstData[fromChain][eleIdx].id);
+            break;
+        }
+    }
+
+    return msgID;
+}
+
 async function simuRegister() {
     const script = fs.readFileSync(
         path.join(
@@ -71,29 +98,8 @@ async function submitSimuCompute(fromChain, contractName, actionName, session, m
     // console.log(session);
     // console.log(msgPayload);
 
-    const scriptID = fs.readFileSync(
-        path.join(
-            process.cwd(),
-            './scripts/send-recv-message/queryNextSubmitMessage.cdc'
-        ),
-        'utf8'
-    );
-
-    let rstData = await flowService.executeScripts({
-        script: scriptID,
-        args: [
-            fcl.arg('0xf8d6e0586b0a20c7', types.Address)
-        ]
-    });
-
-    var recver = '0x01cf0e2f2f715450';
-    var msgID = 1;
-    for (var eleIdx in rstData[fromChain]) {
-        if (rstData[fromChain][eleIdx].recver == recver) {
-            msgID = Number(rstData[fromChain][eleIdx].id);
-            break;
-        }
-    }
+    const recver = '0x01cf0e2f2f715450';
+    const msgID = await getNextSubmittionID(recver, fromChain);
 
     // console.log(msgID);
     // return;
@@ -113,7 +119,7 @@ async function submitSimuCompute(fromChain, contractName, actionName, session, m
         let rstData = await flowService.executeScripts({
             script: script,
             args: [
-                fcl.arg(msgID, types.UInt128),
+                fcl.arg(msgID.toString(10), types.UInt128),
                 fcl.arg(fromChain, types.String),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
@@ -144,7 +150,7 @@ async function submitSimuCompute(fromChain, contractName, actionName, session, m
         let response = await flowService.sendTx({
             transaction: tras,
             args: [
-                fcl.arg(msgID, types.UInt128),
+                fcl.arg(msgID.toString(10), types.UInt128),
                 fcl.arg(fromChain, types.String),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
@@ -221,30 +227,11 @@ async function simulateServer(msgID) {
 
 async function simuRequest() {
 
-    const scriptID = fs.readFileSync(
-        path.join(
-            process.cwd(),
-            './scripts/send-recv-message/queryNextSubmitMessage.cdc'
-        ),
-        'utf8'
-    );
-
-    let rstData = await flowService.executeScripts({
-        script: scriptID,
-        args: [
-            fcl.arg('0xf8d6e0586b0a20c7', types.Address)
-        ]
-    });
-
-    var recver = '0x01cf0e2f2f715450';
-    var msgID = 1;
+    const recver = '0x01cf0e2f2f715450';
     const fromChain = 'POLKADOT';
-    for (var eleIdx in rstData[fromChain]) {
-        if (rstData[fromChain][eleIdx].recver == recver) {
-            msgID = Number(rstData[fromChain][eleIdx].id);
-            break;
-        }
-    }
+    const contractName = recver;
+    const actionName = 'computationServer';
+    const msgID = await getNextSubmittionID(recver, fromChain);
 
     // console.log(msgID);
     // return;
@@ -267,14 +254,11 @@ async function simuRequest() {
         'utf8'
     );
 
-    const contractName = recver;
-    const actionName = 'computationServer';
-
     try {
         let rstData = await flowService.executeScripts({
             script: script,
             args: [
-                fcl.arg(msgID, types.UInt128),
+                fcl.arg(msgID.toString(10), types.UInt128),
                 fcl.arg(fromChain, types.String),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
@@ -305,7 +289,7 @@ async function simuRequest() {
         let response = await flowService.sendTx({
             transaction: tras,
             args: [
-                fcl.arg(msgID, types.UInt128),
+                fcl.arg(msgID.toString(10), types.UInt128),
                 fcl.arg(fromChain, types.String),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
                 fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
@@ -333,5 +317,5 @@ async function simuRequest() {
 
 // await simuRegister();
 
-// await simulateServer(args[2]);
-await simuRequest();
+await simulateServer(args[2]);
+// await simuRequest();
