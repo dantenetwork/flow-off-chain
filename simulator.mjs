@@ -24,7 +24,7 @@ const flowService = new FlowService('0xf8d6e0586b0a20c7',
                                     sha3_256FromString,
                                     'p256');
 
-async function getNextSubmittionID(recver, fromChain) {
+async function getNextSubmittionID(router, recver, fromChain) {
     const scriptID = fs.readFileSync(
         path.join(
             process.cwd(),
@@ -36,7 +36,7 @@ async function getNextSubmittionID(recver, fromChain) {
     let rstData = await flowService.executeScripts({
         script: scriptID,
         args: [
-            fcl.arg('0xf8d6e0586b0a20c7', types.Address)
+            fcl.arg(router, types.Address)
         ]
     });
 
@@ -99,7 +99,7 @@ async function submitSimuCompute(fromChain, contractName, actionName, session, m
     // console.log(msgPayload);
 
     const recver = '0x01cf0e2f2f715450';
-    const msgID = await getNextSubmittionID(recver, fromChain);
+    const msgID = await getNextSubmittionID("0xf8d6e0586b0a20c7", recver, fromChain);
 
     // console.log(msgID);
     // return;
@@ -231,7 +231,7 @@ async function simuRequest() {
     const fromChain = 'POLKADOT';
     const contractName = recver;
     const actionName = 'computationServer';
-    const msgID = await getNextSubmittionID(recver, fromChain);
+    const msgID = await getNextSubmittionID("0xf8d6e0586b0a20c7", recver, fromChain);
 
     // console.log(msgID);
     // return;
