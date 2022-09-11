@@ -1,5 +1,6 @@
 const config = require('config');
 import logger from '../utils/logger'
+import { FlowHandler } from "./flow/index"
 
 class ChainHandlerMgr {
     chainHandlers = {}
@@ -13,8 +14,13 @@ class ChainHandlerMgr {
         for (let i in networks) {
             let network = networks[i];
             // console.log(network)
-            let handler = require('./' + network['compatibleChain'] + '/index');
-            let inst = new handler(i);
+            let inst
+            if (network['compatibleChain'] == 'flow') {
+                inst = new FlowHandler('flow')
+            } else {
+                let handler = require('./' + network['compatibleChain'] + '/index');
+                inst = new handler(i);
+            }
             this.chainHandlers[i] = inst;
             await inst.init();
         }

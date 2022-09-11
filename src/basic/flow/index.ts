@@ -3,8 +3,10 @@ import * as path from "path"
 import { SHA3 } from 'sha3';
 import * as fcl from "@onflow/fcl";
 import * as types from "@onflow/types";
-const utils = require('../../utils/utils');
+
 import FlowService from "./flowoffchain"
+import * as mtonflow from './messageTypesOnFlow';
+
 
 const sha3_256FromString = (msg) => {
   const sha = new SHA3(256);
@@ -18,7 +20,7 @@ const flowService = new FlowService('0xf8d6e0586b0a20c7',
   sha3_256FromString,
   'p256');
 
-const args = process.argv;
+
 class FlowHandler {
   chainName: string
 
@@ -30,53 +32,117 @@ class FlowHandler {
 
   }
 
-  async getSentMessageById(toChai, messageID) {
-    console.log('```````````````````` getSentMessageById')
-    const script = fs
-      .readFileSync(
-        path.join(
-          __dirname,
-          `../../../scripts/send-recv-message/querySendMessageByID.cdc`
-        ),
-        "utf8"
-      )
+  async getNextSubmissionID(router, recver, fromChain) {
 
-    let result = await flowService.executeScripts({
-      script: script,
+    console.log('flow getNextSubmissionID')
+    const scriptID = fs.readFileSync(
+      path.join(
+        '..',
+        './scripts/send-recv-message/queryNextSubmitMessage.cdc'
+      ),
+      'utf8'
+    );
+
+    console.log(path.join(
+      '..',
+      './scripts/send-recv-message/queryNextSubmitMessage.cdc'
+    ))
+    let rstData = await flowService.executeScripts({
+      script: scriptID,
       args: [
-        fcl.arg(messageID, types.UInt128)
+        fcl.arg(router, types.Address)
       ]
-    })
-    // const result = await query({ cadence: script.toString(), args });
-    console.log(result)
+    });
+
+    var msgID = 1;
+    for (var eleIdx in rstData[fromChain]) {
+      if (rstData[fromChain][eleIdx].recver == recver) {
+        msgID = Number(rstData[fromChain][eleIdx].id);
+        break;
+      }
+    }
+
+    return msgID;
   }
+
 
   // push message to Flow
-  async pushMessage(message) {
+  async pushMessage(message: any) {
+    const recver = '0x01cf0e2f2f715450';
+    // const msgID = await getNextSubmittionID("0xf8d6e0586b0a20c7", recver, message.fromChain);
+    let msgID;
+ 
+    const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, new Uint8Array([11, 12, 13, 14, 15]), await fcl.config.get('Profile'));
+    const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
 
-  }
+    const script = fs.readFileSync(
+      path.join(
+        "..",
+        './scripts/crypto-dev/GenerateSubmittion.cdc'
+      ),
+      'utf8'
+    );
 
-  intoGeneralMsg(message) {
-    const messageInfo = [
-      message.id,
-      message.fromChain,
-      this.chainName,
-      utils.toHexString(message.sender),
-      utils.toHexString(message.signer),
-      sqos,
-      utils.toHexString(message.content.contract),
-      utils.toHexString(message.content.action),
-      calldata,
-      [
-        message.session.id,
-        message.session.sessionType,
-        utils.toHexString(message.session.callback),
-        utils.toHexString(message.session.commitment),
-        utils.toHexString(message.session.answer),
-      ],
-      0,
-    ];
+    try {
+      let rstData = await flowService.executeScripts({
+        script: script,
+        args: [
+          fcl.arg(msgID.toString(10), types.UInt128),
+          fcl.arg(message.fromChain, types.String),
+          fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => { return String(num); }), types.Array(types.UInt8)),
+          fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => { return String(num); }), types.Array(types.UInt8)),
+          InputSQoSArray.get_fcl_arg(),
+          fcl.arg(message.contractName, types.Address),
+          // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
+          fcl.arg(message.actionName, types.String),
+          message.msgPayload.get_fcl_arg(),
+          message.session.get_fcl_arg(),
+          fcl.arg('0xf8d6e0586b0a20c7', types.Address)
+        ]
+      });
+
+      console.log(rstData.toBeSign);
+      const toBeSign = rstData.toBeSign;
+      // this can be verified by Flow CLI
+      const signature = flowService.sign2string(toBeSign);
+      console.log(signature);
+
+      const tras = fs.readFileSync(
+        path.join(
+          "..",
+          './transactions/send-recv-message/submitRecvedMessage.cdc'
+        ),
+        'utf8'
+      );
+
+      let response = await flowService.sendTx({
+        transaction: tras,
+        args: [
+          fcl.arg(msgID.toString(10), types.UInt128),
+          fcl.arg(message.fromChain, types.String),
+          fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => { return String(num); }), types.Array(types.UInt8)),
+          fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => { return String(num); }), types.Array(types.UInt8)),
+          InputSQoSArray.get_fcl_arg(),
+          fcl.arg(message.contractName, types.Address),
+          // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
+          fcl.arg(message.actionName, types.String),
+          message.msgPayload.get_fcl_arg(),
+          message.session.get_fcl_arg(),
+          fcl.arg('0xf8d6e0586b0a20c7', types.Address),
+          fcl.arg(signature, types.String),
+          // In official version, the address below shall be the same as `resourceAccount`
+          fcl.arg(recver, types.Address),
+          // and the link shall be got from `CrossChain.registeredRecvAccounts`
+          fcl.arg('receivedMessageVault', types.String)
+        ]
+      });
+
+      console.log(response);
+
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
 
-module.exports = FlowHandler;
+export { FlowHandler }
