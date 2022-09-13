@@ -14,8 +14,8 @@
     },
     "ethereum": {
       "nodeAddress": "https://data-seed-prebsc-1-s1.binance.org:8545",
-      "crossChainContractAddress": "0x5950b420377Ac8128485D54307762FC952e14CD4",
-      "abiPath": "./TwoPhaseCommitCrossChain.json",
+      "crossChainContractAddress": "0x22d87bcc19Db2202284fa5f1B090aE149f23B07B",
+      "abiPath": "./CrossChain.json",
       "compatibleChain": "ethereum",
       "receiveChains": [
         "flow"

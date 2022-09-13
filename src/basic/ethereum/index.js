@@ -24,7 +24,7 @@ const MsgTypeMapToEvm = {
   [globalDefine.MsgType.I64]: 'int64',
   [globalDefine.MsgType.I128]: 'int128',
   [globalDefine.MsgType.StringArray]: 'string[]',
-  [globalDefine.MsgType.U8Array]: 'uint8[]',
+  [globalDefine.MsgType.U8Array]: 'bytes',
   [globalDefine.MsgType.U16Array]: 'uint16[]',
   [globalDefine.MsgType.U32Array]: 'uint32[]',
   [globalDefine.MsgType.U64Array]: 'uint64[]',
@@ -136,7 +136,7 @@ class EthereumHandler {
   // get id of message to be ported
   async getMsgPortingTask(chainName) {
     const _id = await ethereum.contractCall(
-      this.crossChainContract, 'getMsgPortingTask', [chainName, this.porterAddress]);
+      this.crossChainContract, 'getNextMessageId', [chainName, this.porterAddress]);
     return _id;
   }
 
