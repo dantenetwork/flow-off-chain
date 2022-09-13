@@ -13,14 +13,14 @@
       ]
     },
     "ethereum": {
-      "nodeAddress": "https://data-seed-prebsc-1-s1.binance.org:8545",
+      "nodeAddress": "https://devnetopenapi2.platon.network/rpc",
       "crossChainContractAddress": "0x22d87bcc19Db2202284fa5f1B090aE149f23B07B",
       "abiPath": "./CrossChain.json",
       "compatibleChain": "ethereum",
       "receiveChains": [
         "flow"
       ],
-      "chainId": 97
+      "chainId": 2203181
     }
   }
 }

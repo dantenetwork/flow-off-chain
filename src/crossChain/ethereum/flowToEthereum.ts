@@ -7,14 +7,16 @@ async function sendMessage(fromChain, toChain) {
     let fromHandler = chainHandlerMgr.getHandlerByName('flow');
     let toHandler = chainHandlerMgr.getHandlerByName(toChain);
 
-    // let nextMessageId = await toHandler.getMsgPortingTask('flow');
-    // nextMessageId = parseInt(nextMessageId);
-    let nextMessageId = 1
+    let nextMessageId = await toHandler.getMsgPortingTask('flow');
+    nextMessageId = parseInt(nextMessageId);
+    console.log('````nextMessageId', nextMessageId)
     // get message by id
     let message = await fromHandler.getSentMessageById(toChain, nextMessageId);
     logger.info(`${toChain} <- ${'flow'}: ${message} has been sent, next received id will be: ${nextMessageId}`);
     if (message) {
+        console.log('sendMessage 1111111111111111111111111111111')
         let ret = await toHandler.pushMessage(message);
+        console.log('sendMessage 2222222222222222222222222222222', ret)
         if (ret != 0) {
             await toHandler.abandonMessage(nextMessageId, toChain, ret);
         }

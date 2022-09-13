@@ -171,10 +171,13 @@ class EthereumHandler {
   }
 
   async pushMessage(message) {
-    let dataRet = await this.encodeData(message.content.action, message.content.data);
+    console.log('pushMessage 111', message)
+    let dataRet = await this.encodeData(message.content.action, message.content.data.items);
+    console.log('pushMessage 222', dataRet.errorCode, 'dataRet:', dataRet)
     if (dataRet.errorCode != ErrorCode.SUCCESS) {
       return dataRet.errorCode;
     }
+
     let calldata = dataRet.data;
 
     let sqos = [];
@@ -191,18 +194,38 @@ class EthereumHandler {
     if (message.session.callback) {
       callback = utils.toHexString(utils.stringToByteArray(message.session.callback));
     }
+    console.log('pushMessage 333', message.session)
+    this.chainName = "PLATONEVMDEV"
     const messageInfo = [
-      message.id, message.fromChain, message.sender, message.signer, sqos, message.content.contract, message.content.action,
-      calldata, [message.session.id, callback], 0,
+      message.id,
+      message.fromChain,
+      this.chainName,
+      utils.toHexString(message.sender),
+      utils.toHexString(message.signer),
+      sqos,
+      utils.toHexString(message.content.contract),
+      // utils.toHexString(message.content.action),
+      '0x2d436822',
+      calldata,
+      [
+        message.session.id,
+        message.session.type,
+        utils.toHexString(message.session.callback),
+        utils.toHexString(message.session.commitment),
+        utils.toHexString(message.session.answer),
+      ],
+      0,
     ];
 
+    console.log('messageInfo', messageInfo)
+    console.log('pushMessage 444', this.chainId, this.testAccountPrivateKey)
     // send transaction
     logger.debug('Message to be pushed to chain', messageInfo);
     let ret = await ethereum.sendTransaction(
       this.web3, this.chainId,
       this.crossChainContract, 'receiveMessage', this.testAccountPrivateKey,
       [messageInfo]);
-
+    console.log('pushMessage 555', ret)
     if (ret != null) {
       logger.info('Push message successfully');
       return ErrorCode.SUCCESS;
@@ -271,17 +294,20 @@ class EthereumHandler {
   // encode the data
   async encodeData(action, data) {
     logger.debug('encodeData: action and data', action, data);
+    console.log('encodeData: action and data: ', action, data)
     // Construct the argument
     let items = [];
     for (let i = 0; i < data.length; i++) {
+      console.log(' start   ', data[i])
       let item = [];
-      item[0] = data[i].name;
-      item[1] = data[i].msgType;
+      item[0] = data[i].name
+      item[1] = data[i].type
+      console.log(' xxxx    ', MsgTypeMapToEvm[item[1]], data[i].value)
       item[2] = this.web3.eth.abi.encodeParameter(MsgTypeMapToEvm[item[1]], data[i].value);
       items.push(item);
     }
     let argument = [items];
-
+    console.log('encodedata result is: ', argument)
     logger.debug('encodedata result is: ', argument);
     return { errorCode: ErrorCode.SUCCESS, data: argument };
   }

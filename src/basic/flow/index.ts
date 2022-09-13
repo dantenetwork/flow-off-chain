@@ -41,35 +41,41 @@ class FlowHandler {
         "utf8"
       )
 
-    let result = await flowService.executeScripts({
+    let crossChainMessage = await flowService.executeScripts({
       script: script,
       args: [
         fcl.arg(messageID, types.UInt128)
       ]
     })
     // const result = await query({ cadence: script.toString(), args });
-    console.log(result)
-    const messageInfo = [
-      result.id,
-      result.fromChain,
-      this.chainName,
-      result.sender,
-      result.signer,
-      // sqos,
-      // result.content.contract,
-      // result.content.action,
-      // calldata,
-      // [
-      //   message.session.id,
-      //   message.session.sessionType,
-      //   message.session.callback,
-      //   message.session.commitment,
-      //   message.session.answer,
-      // ],
-      0,
-    ];
+    console.log('0000', crossChainMessage)
+    console.log('0000a', crossChainMessage.data.items)
 
-    return messageInfo
+    let sqos = [];
+    for (let i = 0; i < crossChainMessage.sqos.length; i++) {
+      let item = crossChainMessage.sqos[i];
+      if (item.v == '') {
+        item.v = null;
+      }
+      sqos.push(item);
+    }
+
+    let message = {
+      id: crossChainMessage.id,
+      fromChain: crossChainMessage.fromChain,
+      // toChain: crossChainMessage.toChain,
+      toChain: 'PLATONEVMDEV',
+      sender: crossChainMessage.sender,
+      signer: crossChainMessage.signer,
+      session: crossChainMessage.session,
+      sqos: sqos,
+      content: {
+        contract: crossChainMessage.contractName,
+        action: crossChainMessage.actionName,
+        data: crossChainMessage.data,
+      }
+    };
+    return message
   }
 
   async getNextSubmissionID(router, recver, fromChain) {
