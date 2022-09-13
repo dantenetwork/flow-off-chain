@@ -26,7 +26,6 @@ class FlowRelayer {
     }
 
     async sendMessage() {
-        logger.info(`sendMessage to ${this.chainName}`)
         for (let i in this.relayers) {
             await this.relayers[i].sendMessage(i, this.chainName);
         }
