@@ -5,6 +5,7 @@ import * as fcl from "@onflow/fcl";
 import * as types from "@onflow/types";
 import FlowService from "./flowoffchain"
 import * as mtonflow from './messageTypesOnFlow';
+import logger from '../../utils/logger'
 
 const sha3_256FromString = (msg) => {
   const sha = new SHA3(256);
@@ -31,7 +32,6 @@ class FlowHandler {
   }
 
   async getSentMessageById(toChai, messageID) {
-    console.log('```````````````````` flow getSentMessageById')
     const script = fs
       .readFileSync(
         path.join(
@@ -48,8 +48,7 @@ class FlowHandler {
       ]
     })
     // const result = await query({ cadence: script.toString(), args });
-    console.log('0000', crossChainMessage)
-    console.log('0000a', crossChainMessage.data.items)
+    logger.debug(`  crossChainMessage, ${crossChainMessage}`)
 
     let sqos = [];
     for (let i = 0; i < crossChainMessage.sqos.length; i++) {
@@ -79,7 +78,6 @@ class FlowHandler {
   }
 
   async getNextSubmissionID(router, recver, fromChain) {
-    console.log('flow getNextSubmissionID')
     const scriptID = fs.readFileSync(
       path.join(
         __dirname,

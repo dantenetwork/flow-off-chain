@@ -171,9 +171,8 @@ class EthereumHandler {
   }
 
   async pushMessage(message) {
-    console.log('pushMessage 111', message)
     let dataRet = await this.encodeData(message.content.action, message.content.data.items);
-    console.log('pushMessage 222', dataRet.errorCode, 'dataRet:', dataRet)
+    logger.info(`pushMessage, ${dataRet.errorCode}, 'dataRet:', ${dataRet}`)
     if (dataRet.errorCode != ErrorCode.SUCCESS) {
       return dataRet.errorCode;
     }
@@ -194,7 +193,7 @@ class EthereumHandler {
     if (message.session.callback) {
       callback = utils.toHexString(utils.stringToByteArray(message.session.callback));
     }
-    console.log('pushMessage 333', message.session)
+    // console.log('pushMessage 333', message.session, utils.toHexString(message.content.action), utils.toHexString(message.content.action).substring(0, 10))
     this.chainName = "PLATONEVMDEV"
     const messageInfo = [
       message.id,
@@ -204,8 +203,8 @@ class EthereumHandler {
       utils.toHexString(message.signer),
       sqos,
       utils.toHexString(message.content.contract),
-      // utils.toHexString(message.content.action),
-      '0x2d436822',
+      utils.toHexString(message.content.action).substring(0, 10), // evm selector 4bytes '0x2d436822'
+
       calldata,
       [
         message.session.id,
@@ -217,10 +216,9 @@ class EthereumHandler {
       0,
     ];
 
-    console.log('messageInfo', messageInfo)
-    console.log('pushMessage 444', this.chainId, this.testAccountPrivateKey)
+    logger.info(`    messageInfo, ${messageInfo}`)
     // send transaction
-    logger.debug('Message to be pushed to chain', messageInfo);
+    logger.info(`    Message to be pushed to chain ${messageInfo}`);
     let ret = await ethereum.sendTransaction(
       this.web3, this.chainId,
       this.crossChainContract, 'receiveMessage', this.testAccountPrivateKey,
@@ -293,22 +291,20 @@ class EthereumHandler {
 
   // encode the data
   async encodeData(action, data) {
-    logger.debug('encodeData: action and data', action, data);
-    console.log('encodeData: action and data: ', action, data)
+    logger.debug(`encodeData: action and data, ${action}, ${data}`);
+    // console.log('encodeData: action and data: ', action, data)
     // Construct the argument
     let items = [];
     for (let i = 0; i < data.length; i++) {
-      console.log(' start   ', data[i])
       let item = [];
       item[0] = data[i].name
       item[1] = data[i].type
-      console.log(' xxxx    ', MsgTypeMapToEvm[item[1]], data[i].value)
       item[2] = this.web3.eth.abi.encodeParameter(MsgTypeMapToEvm[item[1]], data[i].value);
       items.push(item);
     }
     let argument = [items];
-    console.log('encodedata result is: ', argument)
-    logger.debug('encodedata result is: ', argument);
+    // console.log('encodedata result is: ', argument)
+    // logger.debug('encodedata result is: ', argument);
     return { errorCode: ErrorCode.SUCCESS, data: argument };
   }
 
