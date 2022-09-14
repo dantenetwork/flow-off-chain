@@ -53,16 +53,16 @@ function toByteArray(hexString) {
 
 // Checkout if the format of a message is correct
 function checkMessageFormat(message) {
-    logger.debug('checkMessageFormat', message, message.content.data);
+    // logger.debug('checkMessageFormat', message, message.content.data);
     assert(typeof(message.id) == 'string');
     assert(typeof(message.fromChain) == 'string');
     assert(typeof(message.toChain) == 'string');
-    assert(typeof(message.sender) == 'string');
-    assert(typeof(message.signer) == 'string');
-    assert(typeof(message.content.contract) == 'string');
-    assert(typeof(message.content.action) == 'string');
+    assert(typeof(message.sender) == 'object');
+    assert(typeof(message.signer) == 'object');
+    assert(typeof(message.content.contract) == 'object');
+    assert(typeof(message.content.action) == 'object');
     assert(typeof(message.session.id) == 'string');
-    assert((message.session.callback == null || typeof(message.session.callback) == 'string'));
+    assert((message.session.callback == null || typeof(message.session.callback) == 'object'));
     for (let i = 0; i < message.sqos.length; i++) {
         let item = message.sqos[i];
         assert(item.t >= 0 && item.t < globalDefine.SQoSType.MAX);
@@ -70,9 +70,9 @@ function checkMessageFormat(message) {
     }
     for (let i = 0; i < message.content.data.length; i++) {
         let item = message.content.data[i];
-        assert(typeof(item.name) == 'string');
         assert(item.msgType >= 0 && item.msgType < globalDefine.MsgType.MAX);
-        assert(item.tv == null || typeof(item.tv) == 'string');
+        assert(typeof(item.name) == 'string');
+        assert(item.value == null || typeof(item.value) == 'string' || typeof(item.value) == 'object');
     }
 }
 

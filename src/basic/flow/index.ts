@@ -62,8 +62,7 @@ class FlowHandler {
     let message = {
       id: crossChainMessage.id,
       fromChain: crossChainMessage.fromChain,
-      // toChain: crossChainMessage.toChain,
-      toChain: 'PLATONEVMDEV',
+      toChain: crossChainMessage.toChain,
       sender: crossChainMessage.sender,
       signer: crossChainMessage.signer,
       session: crossChainMessage.session,
@@ -74,6 +73,7 @@ class FlowHandler {
         data: crossChainMessage.data,
       }
     };
+    console.log('  message', message)
     return message
   }
 
@@ -107,12 +107,8 @@ class FlowHandler {
 
   // push message to Flow
   async pushMessage(message: any) {
-    console.log('flow pushMessage', message)
-    const recver = '0x01cf0e2f2f715450';
-    // const msgID = await getNextSubmittionID("0xf8d6e0586b0a20c7", recver, message.fromChain);
-    // let msgID;
-
-    let msgID = 1
+    console.log('flow pushMessage 0000000000000000000000000', message)
+    // const recver = '0x01cf0e2f2f715450';
     const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, new Uint8Array([0x12, 0x34, 0x56, 0x78]), await fcl.config.get('Profile'));
     const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
 
@@ -132,7 +128,6 @@ class FlowHandler {
     );
 
     try {
-
       const addr = Buffer.alloc(8, 0);
       addr[addr.length - 1] = 0x34;
       addr[addr.length - 2] = 0x12;
@@ -140,10 +135,10 @@ class FlowHandler {
       let rstData = await flowService.executeScripts({
         script: script,
         args: [
-          fcl.arg(msgID, types.UInt128),
-          fcl.arg('POLKADOT', types.String),
-          fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => { return String(num); }), types.Array(types.UInt8)),
-          fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => { return String(num); }), types.Array(types.UInt8)),
+          fcl.arg(1, types.UInt128),
+          fcl.arg(message.fromChain, types.String),
+          fcl.arg(message.sender, types.Array(types.UInt8)),
+          fcl.arg(message.signer, types.Array(types.UInt8)),
           InputSQoSArray.get_fcl_arg(),
           fcl.arg('0x01cf0e2f2f715450', types.Address),
           // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
@@ -171,10 +166,10 @@ class FlowHandler {
       let response = await flowService.sendTx({
         transaction: tras,
         args: [
-          fcl.arg(msgID, types.UInt128),
-          fcl.arg('POLKADOT', types.String),
-          fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => { return String(num); }), types.Array(types.UInt8)),
-          fcl.arg(Array.from(Buffer.from('0101010101010101010101010101010101010101010101010101010101010101', 'hex')).map(num => { return String(num); }), types.Array(types.UInt8)),
+          fcl.arg(1, types.UInt128),
+          fcl.arg(message.fromChain, types.String),
+          fcl.arg(message.sender, types.Array(types.UInt8)),
+          fcl.arg(message.signer, types.Array(types.UInt8)),
           InputSQoSArray.get_fcl_arg(),
           fcl.arg('0x01cf0e2f2f715450', types.Address),
           // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
@@ -190,12 +185,11 @@ class FlowHandler {
         ]
       });
 
-      console.log(response);
+      console.log('pushMessage to flow 11111111111111111111111111111111', response);
 
     } catch (error) {
       console.error(error);
     }
-
   }
 }
 

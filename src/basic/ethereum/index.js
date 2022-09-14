@@ -84,8 +84,7 @@ class EthereumHandler {
       return { errorCode: ErrorCode.GET_SENT_MESSAGE_ERROR };
     }
 
-    logger.debug('Original message and data', crossChainMessage, crossChainMessage.content.data);
-
+    console.log('Original message and data', crossChainMessage, crossChainMessage.content.data);
     // deal data
     let dataRet = this.decodeData(crossChainMessage.content.data);
     if (dataRet.errorCode != ErrorCode.SUCCESS) {
@@ -101,34 +100,36 @@ class EthereumHandler {
       }
       sqos.push(item);
     }
-
     let message = {
       id: crossChainMessage.id,
       fromChain: crossChainMessage.fromChain,
       toChain: crossChainMessage.toChain,
-      sender: crossChainMessage.sender,
-      signer: crossChainMessage.signer,
+      sender: utils.toByteArray(crossChainMessage.sender),
+      signer: utils.toByteArray(crossChainMessage.signer),
       session: {
         id: crossChainMessage.session.id,
-        callback: crossChainMessage.session.callback,
+        sessionType: crossChainMessage.session.sessionType,
+        callback: utils.toByteArray(crossChainMessage.session.callback),
+        commitment: utils.toByteArray(crossChainMessage.session.commitment),
+        answer: utils.toByteArray(crossChainMessage.session.answer),
       },
       sqos: sqos,
       content: {
-        contract: crossChainMessage.content.contractAddress,
-        action: crossChainMessage.content.action,
+        contract: utils.toByteArray(crossChainMessage.content.contractAddress),
+        action: utils.toByteArray(crossChainMessage.content.action),
         data: dataRet.data,
       }
     };
-
     try {
       utils.checkMessageFormat(message);
     }
     catch (e) {
       logger.error(e);
+      console.log('checkMessageFormat', e);
       return { errorCode: ErrorCode.MESSAGE_FORMAT_ERROR };
     }
 
-    logger.debug('Dealed message', message);
+    console.log('Dealed message', message);
 
     return { errorCode: ErrorCode.SUCCESS, data: message };
   }
@@ -172,7 +173,6 @@ class EthereumHandler {
 
   async pushMessage(message) {
     let dataRet = await this.encodeData(message.content.action, message.content.data.items);
-    logger.info(`pushMessage, ${dataRet.errorCode}, 'dataRet:', ${dataRet}`)
     if (dataRet.errorCode != ErrorCode.SUCCESS) {
       return dataRet.errorCode;
     }
@@ -194,7 +194,6 @@ class EthereumHandler {
       callback = utils.toHexString(utils.stringToByteArray(message.session.callback));
     }
     // console.log('pushMessage 333', message.session, utils.toHexString(message.content.action), utils.toHexString(message.content.action).substring(0, 10))
-    this.chainName = "PLATONEVMDEV"
     const messageInfo = [
       message.id,
       message.fromChain,
@@ -204,7 +203,6 @@ class EthereumHandler {
       sqos,
       utils.toHexString(message.content.contract),
       utils.toHexString(message.content.action).substring(0, 10), // evm selector 4bytes '0x2d436822'
-
       calldata,
       [
         message.session.id,
@@ -216,14 +214,12 @@ class EthereumHandler {
       0,
     ];
 
-    logger.info(`    messageInfo, ${messageInfo}`)
     // send transaction
     logger.info(`    Message to be pushed to chain ${messageInfo}`);
     let ret = await ethereum.sendTransaction(
       this.web3, this.chainId,
       this.crossChainContract, 'receiveMessage', this.testAccountPrivateKey,
       [messageInfo]);
-    console.log('pushMessage 555', ret)
     if (ret != null) {
       logger.info('Push message successfully');
       return ErrorCode.SUCCESS;
