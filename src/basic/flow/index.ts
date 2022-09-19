@@ -109,16 +109,26 @@ class FlowHandler {
   async pushMessage(message: any) {
     console.log('flow pushMessage 0000000000000000000000000', message)
     // const recver = '0x01cf0e2f2f715450';
+    for (let i = 0; i < message.sqos.length; i++) {
+      let item = [];
+      // item[0] = message.items[i].name
+      // item[1] = message.items[i].type
+      // item[2] = message.items[i].value
+    }
     const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, new Uint8Array([0x12, 0x34, 0x56, 0x78]), await fcl.config.get('Profile'));
     const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
 
-    const msgItem = new mtonflow.MessageItem("greeting", mtonflow.MsgType.cdcString, 'hello nika',
-      await fcl.config.get('Profile'));
+    let msgArr: any
+    for (let i = 0; i < message.items.length; i++) {
+      let item = [];
+      item[0] = message.items[i].name
+      item[1] = message.items[i].type
+      item[2] = message.items[i].value
+      msgArr.push(new mtonflow.MessageItem(item[0], item[1], item[2], await fcl.config.get('Profile')))
+    }
 
-    const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
-
-    const session = new mtonflow.Session(0, 0, await fcl.config.get('Profile'), new Uint8Array([0x11, 0x11, 0x11, 0x11]), new Uint8Array([0x22]), new Uint8Array([0x33]));
-
+    const msgPayload = new mtonflow.MessagePayload(msgArr, await fcl.config.get('Profile'));
+    const session = new mtonflow.Session(+message.session.id, +message.session.sessionType, await fcl.config.get('Profile'), new Uint8Array(message.session.callback), new Uint8Array(message.session.commitment), new Uint8Array(message.session.answer));
     const script = fs.readFileSync(
       path.join(
         process.cwd(),
@@ -127,6 +137,7 @@ class FlowHandler {
       'utf8'
     );
 
+    console.log('start---------------')
     try {
       const addr = Buffer.alloc(8, 0);
       addr[addr.length - 1] = 0x34;
@@ -140,16 +151,16 @@ class FlowHandler {
           fcl.arg(message.sender, types.Array(types.UInt8)),
           fcl.arg(message.signer, types.Array(types.UInt8)),
           InputSQoSArray.get_fcl_arg(),
-          fcl.arg('0x01cf0e2f2f715450', types.Address),
+          fcl.arg(message.contract, types.Address),
           // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
-          fcl.arg('GreetingRecver', types.String),
+          fcl.arg(message.action, types.String),
           msgPayload.get_fcl_arg(),
           session.get_fcl_arg(),
           fcl.arg('0xf8d6e0586b0a20c7', types.Address)
         ]
       });
 
-      console.log(rstData.toBeSign);
+      console.log('111111', rstData.toBeSign);
       const toBeSign = rstData.toBeSign;
       // this can be verified by Flow CLI
       const signature = flowService.sign2string(toBeSign);

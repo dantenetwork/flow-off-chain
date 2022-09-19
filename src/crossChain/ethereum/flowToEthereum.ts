@@ -4,6 +4,7 @@ const utils = require('../../utils/utils');
 import logger from "../../utils/logger"
 
 async function sendMessage(fromChain, toChain) {
+    return 
     logger.info(`sendMessage to ${toChain}`)
     let fromHandler = chainHandlerMgr.getHandlerByName(fromChain);
     let toHandler = chainHandlerMgr.getHandlerByName(toChain);

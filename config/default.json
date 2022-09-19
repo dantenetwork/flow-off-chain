@@ -14,7 +14,7 @@
     },
     "PLATONEVMDEV": {
       "nodeAddress": "https://devnetopenapi2.platon.network/rpc",
-      "crossChainContractAddress": "0x22d87bcc19Db2202284fa5f1B090aE149f23B07B",
+      "crossChainContractAddress": "0x7C15e9535BC8ef634016e25A79160517fED99ED0",
       "abiPath": "./CrossChain.json",
       "compatibleChain": "ethereum",
       "receiveChains": [

@@ -101,6 +101,7 @@ class EthereumHandler {
       }
       sqos.push(item);
     }
+    console.log('yyyyyyy',crossChainMessage.content.contractAddress)
     let message = {
       id: crossChainMessage.id,
       fromChain: crossChainMessage.fromChain,
@@ -116,13 +117,13 @@ class EthereumHandler {
       },
       sqos: sqos,
       content: {
-        contract: utils.toByteArray(crossChainMessage.content.contractAddress),
-        action: utils.toByteArray(crossChainMessage.content.action),
+        contract: utils.toHexString(crossChainMessage.content.contractAddress),
+        action: String(crossChainMessage.content.action, "utf8"),
         data: dataRet.data,
       }
     };
     try {
-      utils.checkMessageFormat(message);
+      // utils.checkMessageFormat(message);
     }
     catch (e) {
       logger.error(e);
@@ -337,12 +338,12 @@ class EthereumHandler {
     let ret = await ethereum.sendTransaction(
       this.web3, this.chainId,
       this.crossChainContract, 'executeMessage', this.testAccountPrivateKey, [chainName, id]);
-      console.log('xxxxxxxxxxx executeMessage', ret)
-      if (ret != null) {
-        console.log(
-          utils.format(utils.format('Message from chain {0} executed, id is {1}', chainName, id))
-        );
-      }
+    console.log('xxxxxxxxxxx executeMessage', ret)
+    if (ret != null) {
+      console.log(
+        utils.format(utils.format('Message from chain {0} executed, id is {1}', chainName, id))
+      );
+    }
   }
 
   // push hidden message
@@ -456,5 +457,7 @@ class EthereumHandler {
     return this.web3;
   }
 }
+
+
 
 export { EthereumHandler }
