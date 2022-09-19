@@ -69,7 +69,7 @@ async function testSubmit(msgID) {
     const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, [0x12, 0x34, 0x56, 0x78], await fcl.config.get('Profile'));
     const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
 
-    const msgItem = new mtonflow.MessageItem("greeting", mtonflow.MsgType.cdcString, 'hello nika', 
+    const msgItem = new mtonflow.MessageItem("greeting", mtonflow.MsgType.cdcVecString, ['hello nika', 'I\'m moon'], 
                                                 await fcl.config.get('Profile'));
 
     const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
@@ -137,7 +137,7 @@ async function testSubmit(msgID) {
                 fcl.arg('0xf8d6e0586b0a20c7', types.Address),
                 fcl.arg(signature, types.String),
                 // In official version, the address below shall be the same as `resourceAccount`
-                fcl.arg('0xf8d6e0586b0a20c7', types.Address),
+                fcl.arg('0x01cf0e2f2f715450', types.Address),
                 // and the link shall be got from `CrossChain.registeredRecvAccounts`
                 fcl.arg('receivedMessageVault', types.String)
             ]
@@ -185,4 +185,4 @@ async function signData() {
 // await testRegister();
 // await testSubmit(args[2]);
 // await testSignatureToNormalString();
-await signData();
+// await signData();
