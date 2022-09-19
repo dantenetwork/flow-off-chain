@@ -386,7 +386,7 @@ export class MessageItem {
 }
 
 export class MessagePayload {
-    items: [MessageItem];
+    items:  [MessageItem];
     id: string; 
 
     constructor(items: [MessageItem], moduleAddress: string) {
@@ -406,7 +406,6 @@ export class MessagePayload {
     get_fcl_arg() {
         const itemTyps = this.items.map(item => {return item.get_type();});
         const itemValues = this.items.map(item => {return item.get_value();});
-
         return fcl.arg({
             fields: [
               {name: "items", value: itemValues}

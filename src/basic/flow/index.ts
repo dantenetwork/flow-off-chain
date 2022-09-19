@@ -118,16 +118,22 @@ class FlowHandler {
     const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, new Uint8Array([0x12, 0x34, 0x56, 0x78]), await fcl.config.get('Profile'));
     const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
 
-    let msgArr: any
-    for (let i = 0; i < message.items.length; i++) {
-      let item = [];
-      item[0] = message.items[i].name
-      item[1] = message.items[i].type
-      item[2] = message.items[i].value
-      msgArr.push(new mtonflow.MessageItem(item[0], item[1], item[2], await fcl.config.get('Profile')))
-    }
-
-    const msgPayload = new mtonflow.MessagePayload(msgArr, await fcl.config.get('Profile'));
+    // let msgArr = new Array<mtonflow.MessageItem>()
+    // console.log('start--------------0-', msgArr)
+    // for (let i = 0; i < message.data.length; i++) {
+    //   let item = [];
+    //   item[0] = message.data[i][0]
+    //   item[1] = message.data[i][1]
+    //   item[2] = message.data[i][2]
+    //   // console.log('start--------------01-', item)
+    //   // console.log('start--------------01-', item[0], Number(item[1]), item[2], await fcl.config.get('Profile'))
+    //   let obj = new mtonflow.MessageItem(item[0], Number(item[1]), item[2], await fcl.config.get('Profile'))
+    //   msgArr.push(obj)
+    //   // console.log('start--------------02-')
+    // }
+    console.log('start---------------')
+    let obj = new mtonflow.MessageItem('greetings', Number(11), ['hello world'], await fcl.config.get('Profile'))
+    const msgPayload = new mtonflow.MessagePayload([obj], await fcl.config.get('Profile'));
     const session = new mtonflow.Session(+message.session.id, +message.session.sessionType, await fcl.config.get('Profile'), new Uint8Array(message.session.callback), new Uint8Array(message.session.commitment), new Uint8Array(message.session.answer));
     const script = fs.readFileSync(
       path.join(
@@ -137,8 +143,9 @@ class FlowHandler {
       'utf8'
     );
 
-    console.log('start---------------')
+
     try {
+      console.log('xxxxxxx', message.contract)
       const addr = Buffer.alloc(8, 0);
       addr[addr.length - 1] = 0x34;
       addr[addr.length - 2] = 0x12;
@@ -146,13 +153,12 @@ class FlowHandler {
       let rstData = await flowService.executeScripts({
         script: script,
         args: [
-          fcl.arg(1, types.UInt128),
+          fcl.arg(message.id, types.UInt128),
           fcl.arg(message.fromChain, types.String),
-          fcl.arg(message.sender, types.Array(types.UInt8)),
-          fcl.arg(message.signer, types.Array(types.UInt8)),
+          fcl.arg(message.sender.map(num => { return String(num); }), types.Array(types.UInt8)),
+          fcl.arg(message.signer.map(num => { return String(num); }), types.Array(types.UInt8)),
           InputSQoSArray.get_fcl_arg(),
-          fcl.arg(message.contract, types.Address),
-          // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
+          fcl.arg('0x' + message.contract, types.Address),
           fcl.arg(message.action, types.String),
           msgPayload.get_fcl_arg(),
           session.get_fcl_arg(),
@@ -177,14 +183,13 @@ class FlowHandler {
       let response = await flowService.sendTx({
         transaction: tras,
         args: [
-          fcl.arg(1, types.UInt128),
+          fcl.arg(message.id, types.UInt128),
           fcl.arg(message.fromChain, types.String),
-          fcl.arg(message.sender, types.Array(types.UInt8)),
-          fcl.arg(message.signer, types.Array(types.UInt8)),
+          fcl.arg(message.sender.map(num => { return String(num); }), types.Array(types.UInt8)),
+          fcl.arg(message.signer.map(num => { return String(num); }), types.Array(types.UInt8)),
           InputSQoSArray.get_fcl_arg(),
-          fcl.arg('0x01cf0e2f2f715450', types.Address),
-          // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
-          fcl.arg('GreetingRecver', types.String),
+          fcl.arg('0x' + message.contract, types.Address),
+          fcl.arg(message.action, types.String),
           msgPayload.get_fcl_arg(),
           session.get_fcl_arg(),
           fcl.arg('0xf8d6e0586b0a20c7', types.Address),

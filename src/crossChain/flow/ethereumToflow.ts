@@ -44,8 +44,8 @@ async function sendMessage(fromChain, toChain) {
       signer: jsonRet.data.signer,
       session: jsonRet.data.session,
       sqos: jsonRet.data.sqos,
-      contract: jsonRet.data.content.contract,
-      action: jsonRet.data.content.action,
+      contract: new Buffer(jsonRet.data.content.contract).toString("hex"),
+      action: new Buffer(jsonRet.data.content.action).toString("utf8"),
       data: items,
     }
 

@@ -7,9 +7,11 @@ const ethereum = require('./ethereum.js');
 const fs = require('fs');
 const globalDefine = require('../../utils/globalDefine.js');
 const utils = require('../../utils/utils.js');
+import logger from '../../utils/logger'
 const ErrorCode = globalDefine.ErrorCode.ethereum;
 
-import logger from '../../utils/logger'
+const EXECUTE_FAILED = 'ExecuteFailed';
+const MESSAGE_EXECUTED = 'MessageExecuted';
 
 const MsgTypeMapToEvm = {
   [globalDefine.MsgType.String]: 'string',
@@ -24,7 +26,7 @@ const MsgTypeMapToEvm = {
   [globalDefine.MsgType.I64]: 'int64',
   [globalDefine.MsgType.I128]: 'int128',
   [globalDefine.MsgType.StringArray]: 'string[]',
-  [globalDefine.MsgType.U8Array]: 'bytes',
+  [globalDefine.MsgType.U8Array]: 'uint8[]',
   [globalDefine.MsgType.U16Array]: 'uint16[]',
   [globalDefine.MsgType.U32Array]: 'uint32[]',
   [globalDefine.MsgType.U64Array]: 'uint64[]',
@@ -34,6 +36,7 @@ const MsgTypeMapToEvm = {
   [globalDefine.MsgType.I32Array]: 'int32[]',
   [globalDefine.MsgType.I64Array]: 'int64[]',
   [globalDefine.MsgType.I128Array]: 'int128[]',
+  [globalDefine.MsgType.Address]: 'tuple(address,string,uint8)',
 };
 
 class EthereumHandler {
@@ -42,15 +45,11 @@ class EthereumHandler {
   }
 
   async init() {
-    console.log('ethereum handler init')
     logger.info(utils.format("Init handler: {0}, compatible chain: {1}", this.chainName, "ethereum"));
     this.web3 = new Web3(config.get('networks.' + this.chainName + '.nodeAddress'));
     this.web3.eth.handleRevert = true;
-    // console.log(config)
     let secret = JSON.parse(fs.readFileSync(config.get('secret')));
-    // console.log('secret', secret)
     this.testAccountPrivateKey = secret[this.chainName];
-    // console.log(this.testAccountPrivateKey)
     this.porterAddress = this.web3.eth.accounts.privateKeyToAccount(this.testAccountPrivateKey).address;
     logger.info(utils.format("Porter address is: {0}", this.porterAddress));
     let crossChainContractAddress = config.get('networks.' + this.chainName + '.crossChainContractAddress');
@@ -58,6 +57,16 @@ class EthereumHandler {
     let crossChainAbi = JSON.parse(crossChainRawData).abi;
     this.crossChainContract = new this.web3.eth.Contract(crossChainAbi, crossChainContractAddress);
     this.chainId = config.get('networks.' + this.chainName + '.chainId');
+    for (let i = 0; i < crossChainAbi.length; i++) {
+      if (crossChainAbi[i].type == 'event' && crossChainAbi[i].name == EXECUTE_FAILED) {
+        this.eventExecuteFailed = crossChainAbi[i];
+        this.eventExecuteFailed.signature = this.web3.eth.abi.encodeEventSignature(this.eventExecuteFailed);
+      }
+      else if (crossChainAbi[i].type == 'event' && crossChainAbi[i].name == MESSAGE_EXECUTED) {
+        this.eventMessageExecuted = crossChainAbi[i];
+        this.eventMessageExecuted.signature = this.web3.eth.abi.encodeEventSignature(this.eventMessageExecuted);
+      }
+    }
   }
 
   // query sent message count
@@ -82,10 +91,11 @@ class EthereumHandler {
         this.crossChainContract, 'getSentMessage', [toChain, id]);
     }
     catch (e) {
-      return { errorCode: ErrorCode.GET_SENT_MESSAGE_ERROR };
+      return {errorCode: ErrorCode.GET_SENT_MESSAGE_ERROR};
     }
 
-    console.log('Original message and data', crossChainMessage, crossChainMessage.content.data);
+    logger.debug('Original message and data', crossChainMessage, crossChainMessage.content.data);
+
     // deal data
     let dataRet = this.decodeData(crossChainMessage.content.data);
     if (dataRet.errorCode != ErrorCode.SUCCESS) {
@@ -101,7 +111,7 @@ class EthereumHandler {
       }
       sqos.push(item);
     }
-    console.log('yyyyyyy',crossChainMessage.content.contractAddress)
+
     let message = {
       id: crossChainMessage.id,
       fromChain: crossChainMessage.fromChain,
@@ -109,48 +119,38 @@ class EthereumHandler {
       sender: utils.toByteArray(crossChainMessage.sender),
       signer: utils.toByteArray(crossChainMessage.signer),
       session: {
-        id: crossChainMessage.session.id,
-        sessionType: crossChainMessage.session.sessionType,
-        callback: utils.toByteArray(crossChainMessage.session.callback),
-        commitment: utils.toByteArray(crossChainMessage.session.commitment),
-        answer: utils.toByteArray(crossChainMessage.session.answer),
+          id: crossChainMessage.session.id,
+          sessionType: crossChainMessage.session.sessionType,
+          callback: utils.toByteArray(crossChainMessage.session.callback),
+          commitment: utils.toByteArray(crossChainMessage.session.commitment),
+          answer: utils.toByteArray(crossChainMessage.session.answer),
       },
       sqos: sqos,
       content: {
-        contract: utils.toHexString(crossChainMessage.content.contractAddress),
-        action: String(crossChainMessage.content.action, "utf8"),
-        data: dataRet.data,
+          contract: utils.toByteArray(crossChainMessage.content.contractAddress),
+          action: utils.toByteArray(crossChainMessage.content.action),
+          data: dataRet.data,
       }
     };
+
     try {
-      // utils.checkMessageFormat(message);
+      utils.checkMessageFormat(message);
     }
     catch (e) {
       logger.error(e);
-      console.log('checkMessageFormat', e);
-      return { errorCode: ErrorCode.MESSAGE_FORMAT_ERROR };
+      return {errorCode: ErrorCode.MESSAGE_FORMAT_ERROR};
     }
 
-    console.log('Dealed message', message);
-
-    return { errorCode: ErrorCode.SUCCESS, data: message };
+    logger.debug('Dealed message', message);
+    
+    return {errorCode: ErrorCode.SUCCESS, data: message};
   }
 
   // get id of message to be ported
   async getMsgPortingTask(chainName) {
     const _id = await ethereum.contractCall(
-      this.crossChainContract, 'getNextMessageId', [chainName, this.porterAddress]);
-    return _id;
-  }
-
-  // query target info by sender and action
-  async queryTargetInfo(appContractAddress, methodHex) {
-    let contractBaseRawData = fs.readFileSync('./ContractBase.json');
-    let contractBaseAbi = JSON.parse(contractBaseRawData).abi;
-    let appContract = new this.web3.eth.Contract(contractBaseAbi, appContractAddress);
-    const target = await ethereum.contractCall(
-      appContract, 'messageABIMap', [methodHex]);
-    return target;
+      this.crossChainContract, 'getMsgPortingTask', [chainName, this.porterAddress]);
+    return parseInt(_id);
   }
 
   // query target info by sender and action
@@ -167,20 +167,22 @@ class EthereumHandler {
     if (_id == 0) {
       return null;
     }
-
+    
     const _message = await ethereum.contractCall(
       this.crossChainContract, 'getReceivedMessage', [chainName, _id]);
     return _message;
   }
 
   async pushMessage(message) {
-    let dataRet = await this.encodeData(message.content.action, message.content.data.items);
+    logger.debug('pushMessage input data', message);
+    // deal data
+    let dataRet = await this.encodeData(message.content.action, message.content.data);
     if (dataRet.errorCode != ErrorCode.SUCCESS) {
       return dataRet.errorCode;
     }
-
     let calldata = dataRet.data;
 
+    // deal sqos
     let sqos = [];
     for (let i = 0; i < message.sqos.length; i++) {
       let item = message.sqos[i];
@@ -191,11 +193,6 @@ class EthereumHandler {
     }
 
     // prepare message info
-    let callback = '0x';
-    if (message.session.callback) {
-      callback = utils.toHexString(utils.stringToByteArray(message.session.callback));
-    }
-    // console.log('pushMessage 333', message.session, utils.toHexString(message.content.action), utils.toHexString(message.content.action).substring(0, 10))
     const messageInfo = [
       message.id,
       message.fromChain,
@@ -208,21 +205,21 @@ class EthereumHandler {
       calldata,
       [
         message.session.id,
-        message.session.type,
+        message.session.sessionType,
         utils.toHexString(message.session.callback),
         utils.toHexString(message.session.commitment),
         utils.toHexString(message.session.answer),
       ],
-      0,
+      0, 
     ];
 
     // send transaction
-    // logger.info(`    Message to be pushed to chain ${messageInfo}`);
-    console.log(`Message to be pushed to chain ${messageInfo}`);
+    logger.debug('Message to be pushed to chain', messageInfo);
     let ret = await ethereum.sendTransaction(
       this.web3, this.chainId,
       this.crossChainContract, 'receiveMessage', this.testAccountPrivateKey,
       [messageInfo]);
+
     if (ret != null) {
       logger.info('Push message successfully');
       return ErrorCode.SUCCESS;
@@ -247,7 +244,7 @@ class EthereumHandler {
       catch (e) {
         logger.error(e);
         logger.debug('function_json: {0}', function_json);
-        return { errorCode: ErrorCode.INTERFACE_ERROR };
+        return {errorCode: ErrorCode.INTERFACE_ERROR};
       }
     }
     else {
@@ -259,7 +256,7 @@ class EthereumHandler {
       catch (e) {
         logger.error(e);
         logger.debug('function_json: {0}', function_json);
-        return { errorCode: ErrorCode.INTERFACE_ERROR };
+        return {errorCode: ErrorCode.INTERFACE_ERROR};
       }
     }
 
@@ -271,7 +268,7 @@ class EthereumHandler {
     catch (e) {
       logger.error(e);
       logger.debug('function_json: {0}, data: {1}', function_json, data);
-      return { errorCode: ErrorCode.DATA_FORMAT_ERROR };
+      return {errorCode: ErrorCode.DATA_FORMAT_ERROR};
     }
 
     // encode params by ABI
@@ -282,29 +279,28 @@ class EthereumHandler {
     catch (e) {
       logger.error(e);
       logger.debug('function_json: {0}, dataArray: {1}', function_json, dataArray);
-      return { errorCode: ErrorCode.ABI_ENCODE_ERROR };
+      return {errorCode: ErrorCode.ABI_ENCODE_ERROR};
     }
 
-    return { errorCode: ErrorCode.SUCCESS, data: calldata };
+    return  {errorCode: ErrorCode.SUCCESS, data: calldata};
   }
 
   // encode the data
   async encodeData(action, data) {
-    logger.debug(`encodeData: action and data, ${action}, ${data}`);
-    // console.log('encodeData: action and data: ', action, data)
+    logger.debug('encodeData: action and data', action, data);
     // Construct the argument
     let items = [];
     for (let i = 0; i < data.length; i++) {
       let item = [];
-      item[0] = data[i].name
-      item[1] = data[i].type
+      item[0] = data[i].name;
+      item[1] = data[i].msgType;
       item[2] = this.web3.eth.abi.encodeParameter(MsgTypeMapToEvm[item[1]], data[i].value);
       items.push(item);
     }
     let argument = [items];
-    // console.log('encodedata result is: ', argument)
-    // logger.debug('encodedata result is: ', argument);
-    return { errorCode: ErrorCode.SUCCESS, data: argument };
+
+    logger.debug('encodedata result is: ', argument);
+    return {errorCode: ErrorCode.SUCCESS, data: argument};
   }
 
   // decode data
@@ -314,22 +310,25 @@ class EthereumHandler {
     for (let i = 0; i < payload.items.length; i++) {
       let item = {};
       item.name = payload.items[i].name;
+      let value;
       try {
-        let ret = this.web3.eth.abi.decodeParameter(MsgTypeMapToEvm[payload.items[i].msgType], payload.items[i].value);
-        item.value = ret;
+        value = this.web3.eth.abi.decodeParameter(MsgTypeMapToEvm[payload.items[i].msgType], payload.items[i].value);
+        logger.debug('decodeData value:', value);
       }
       catch (e) {
         logger.info('Decode data error, payload is: ', payload);
         logger.error(e);
-        return { errorCode: ErrorCode.DECODE_DATA_ERROR };
+        return {errorCode: ErrorCode.DECODE_DATA_ERROR};
       }
       item.msgType = payload.items[i].msgType;
+      item.value = value;
+      
       data.push(item);
     }
 
     logger.debug('decodeData: decode result is', data);
 
-    return { errorCode: ErrorCode.SUCCESS, data: data };
+    return {errorCode: ErrorCode.SUCCESS, data: data};
   }
 
   // execute message
@@ -338,11 +337,27 @@ class EthereumHandler {
     let ret = await ethereum.sendTransaction(
       this.web3, this.chainId,
       this.crossChainContract, 'executeMessage', this.testAccountPrivateKey, [chainName, id]);
-    console.log('xxxxxxxxxxx executeMessage', ret)
+
     if (ret != null) {
-      console.log(
+      logger.info(
         utils.format(utils.format('Message from chain {0} executed, id is {1}', chainName, id))
       );
+      logger.debug(ret.logs[0].topics, ret.logs[0].data);
+      for (let i = 0; i < ret.logs.length; i++) {
+        let log = ret.logs[i];
+        if (log.address == this.crossChainContract._address) {
+          if (log.topics[0] == this.eventExecuteFailed.signature) {
+            let decodedLog = this.web3.eth.abi.decodeLog(this.eventExecuteFailed.inputs, log.data, log.topics.slice(1));
+            logger.info(utils.format('Execute failed: method {0} of contract {1}, error code is {2}.',
+              decodedLog.action, decodedLog.to, decodedLog.errorCode));
+          }
+          else if (log.topics[0] == this.eventMessageExecuted.signature) {
+            let decodedLog = this.web3.eth.abi.decodeLog(this.eventMessageExecuted.inputs, log.data, log.topics.slice(1));
+            logger.info(utils.format('Message executed: method {0} of contract {1}.',
+              decodedLog.action, decodedLog.to));
+          }
+        }
+      }
     }
   }
 
@@ -390,6 +405,7 @@ class EthereumHandler {
 
   // abandon message
   async abandonMessage(chainName, id, errorCode) {
+    return;
     // send transaction
     let ret = await ethereum.sendTransaction(
       this.web3, this.chainId,
@@ -457,7 +473,5 @@ class EthereumHandler {
     return this.web3;
   }
 }
-
-
 
 export { EthereumHandler }
