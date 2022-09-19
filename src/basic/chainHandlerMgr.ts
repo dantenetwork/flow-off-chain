@@ -1,6 +1,7 @@
 const config = require('config');
 import logger from '../utils/logger'
 import { FlowHandler } from "./flow/index"
+import { EthereumHandler } from "./ethereum/index"
 
 class ChainHandlerMgr {
     chainHandlers = {}
@@ -16,10 +17,9 @@ class ChainHandlerMgr {
             // console.log(network)
             let inst
             if (network['compatibleChain'] == 'flow') {
-                inst = new FlowHandler('flow')
+                inst = new FlowHandler('FLOWTEST')
             } else {
-                let handler = require('./' + network['compatibleChain'] + '/index');
-                inst = new handler(i);
+                inst = new EthereumHandler('PLATONEVMDEV')
             }
             this.chainHandlers[i] = inst;
             await inst.init();

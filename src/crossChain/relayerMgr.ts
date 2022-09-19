@@ -12,14 +12,14 @@ class RelayerMgr {
         for (let i in networks) {
             let network = networks[i];
             // console.log(network)
-            if (network['compatibleChain'] == "ethereum") {
-                let relayer = new FlowRelayer("flow")
+            if (network['compatibleChain'] == "flow") {
+                let relayer = new FlowRelayer("FLOWTEST")
                 this.relayers[i] = relayer;
                 await relayer.init();
             }
 
-            if (network['compatibleChain'] == "flow") {
-                let relayer = new EthereumRelayer("ethereum")
+            if (network['compatibleChain'] == "ethereum") {
+                let relayer = new EthereumRelayer("PLATONEVMDEV")
                 this.relayers[i] = relayer;
                 await relayer.init();
             }

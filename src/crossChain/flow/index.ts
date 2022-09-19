@@ -1,4 +1,4 @@
-const chainHandlerMgr = require('../../basic/chainHandlerMgr');
+import { chainHandlerMgr } from '../../basic/chainHandlerMgr'
 const config = require('config');
 import logger from '../../utils/logger'
 

@@ -3,22 +3,22 @@
   "logLevel": "debug",
   "secret": "config/.secret",
   "networks": {
-    "flow": {
+    "FLOWTEST": {
       "nodeAddress": "wss://rpc.shibuya.astar.network",
       "crossChainContractAddress": "YoF56GBPEGKKeokDzLxwsZyYsmCaWYPQ7eiiqdGtAZRswdd",
       "abiPath": "./cross_chain.json",
       "compatibleChain": "flow",
       "receiveChains": [
-        "ethereum"
+        "PLATONEVMDEV"
       ]
     },
-    "ethereum": {
+    "PLATONEVMDEV": {
       "nodeAddress": "https://devnetopenapi2.platon.network/rpc",
       "crossChainContractAddress": "0x22d87bcc19Db2202284fa5f1B090aE149f23B07B",
       "abiPath": "./CrossChain.json",
       "compatibleChain": "ethereum",
       "receiveChains": [
-        "flow"
+        "FLOWTEST"
       ],
       "chainId": 2203181
     }

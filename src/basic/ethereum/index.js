@@ -42,6 +42,7 @@ class EthereumHandler {
   }
 
   async init() {
+    console.log('ethereum handler init')
     logger.info(utils.format("Init handler: {0}, compatible chain: {1}", this.chainName, "ethereum"));
     this.web3 = new Web3(config.get('networks.' + this.chainName + '.nodeAddress'));
     this.web3.eth.handleRevert = true;
@@ -202,7 +203,7 @@ class EthereumHandler {
       utils.toHexString(message.signer),
       sqos,
       utils.toHexString(message.content.contract),
-      utils.toHexString(message.content.action).substring(0, 10), // evm selector 4bytes '0x2d436822'
+      utils.toHexString(message.content.action),
       calldata,
       [
         message.session.id,
@@ -215,7 +216,8 @@ class EthereumHandler {
     ];
 
     // send transaction
-    logger.info(`    Message to be pushed to chain ${messageInfo}`);
+    // logger.info(`    Message to be pushed to chain ${messageInfo}`);
+    console.log(`Message to be pushed to chain ${messageInfo}`);
     let ret = await ethereum.sendTransaction(
       this.web3, this.chainId,
       this.crossChainContract, 'receiveMessage', this.testAccountPrivateKey,
@@ -335,12 +337,12 @@ class EthereumHandler {
     let ret = await ethereum.sendTransaction(
       this.web3, this.chainId,
       this.crossChainContract, 'executeMessage', this.testAccountPrivateKey, [chainName, id]);
-
-    if (ret != null) {
-      logger.info(
-        utils.format(utils.format('Message from chain {0} executed, id is {1}', chainName, id))
-      );
-    }
+      console.log('xxxxxxxxxxx executeMessage', ret)
+      if (ret != null) {
+        console.log(
+          utils.format(utils.format('Message from chain {0} executed, id is {1}', chainName, id))
+        );
+      }
   }
 
   // push hidden message
@@ -455,4 +457,4 @@ class EthereumHandler {
   }
 }
 
-module.exports = EthereumHandler;
+export { EthereumHandler }
