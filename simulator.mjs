@@ -176,7 +176,7 @@ async function submitSimuCompute(fromChain, contractName, actionName, session, m
     }
 }
 
-async function simulateServer(msgID) {
+async function simulateServer(chain, msgID) {
     const script = fs.readFileSync(
         path.join(
             process.cwd(),
@@ -188,6 +188,7 @@ async function simulateServer(msgID) {
     let rstData = await flowService.executeScripts({
         script: script,
         args: [
+            fcl.arg(chain, types.String),
             fcl.arg(msgID, types.UInt128)
         ]
     });
@@ -317,5 +318,5 @@ async function simuRequest() {
 
 // await simuRegister();
 
-await simulateServer(args[2]);
-// await simuRequest();
+// await simulateServer(args[2], args[3]);
+await simuRequest();
