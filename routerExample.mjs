@@ -177,7 +177,7 @@ async function testSignatureToNormalString() {
 }
 
 async function signData() {
-    const message = 'f8d6e0586b0a20c7010227c0ecaa94b921fb220ccfcb8f704862801deee1975867dccad26ab1d30d95';
+    const message = 'f8d6e0586b0a20c70165267ecaa60bd88374b73bca0c8fce7da9d8ebd81744bb891859a6db8d30d4db';
     const signature = flowService.sign2string(message);
     console.log(signature);
 }

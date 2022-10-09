@@ -317,6 +317,6 @@ async function simuRequest() {
 }
 
 // await simuRegister();
-
-// await simulateServer(args[2], args[3]);
-await simuRequest();
+// await simuRequest();
+await simulateServer(args[2], args[3]);
+// await simuRequest();
