@@ -182,7 +182,28 @@ async function signData() {
     console.log(signature);
 }
 
+// query sent message count
+async function getSentMessageCount(toChain) {
+    const scriptID = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        './scripts/send-recv-message/currentSentMessageID.cdc'
+      ),
+      'utf8'
+    );
+
+    let rstData = await flowService.executeScripts({
+      script: scriptID,
+      args: [
+        fcl.arg(toChain, types.String)
+      ]
+    });
+
+    return rstData;
+  }
+
 // await testRegister();
 // await testSubmit(args[2]);
 // await testSignatureToNormalString();
-await signData();
+// await signData();
+console.log(await getSentMessageCount('nika'));
