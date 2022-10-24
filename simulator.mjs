@@ -8,6 +8,7 @@ import path from 'path';
 
 import * as mtonflow from './messageTypesOnFlow.js';
 import oc from './omnichainCrypto.js'
+import { triggerAsyncId } from 'async_hooks';
 
 
 const args = process.argv;
@@ -224,6 +225,8 @@ async function simulateServer(chain, msgID) {
     const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
 
     await submitSimuCompute(fromChain, contractName, actionName, session, msgPayload);
+
+    await trigger();
 }
 
 async function simuRequest() {
@@ -311,12 +314,61 @@ async function simuRequest() {
     
         console.log(response);
 
+        await trigger();
+
     } catch (error) {
         console.error(error);
     }
 }
 
+async function trigger() {
+    // after submitted 
+    const trasTrigger = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './transactions/send-recv-message/trigger.cdc'
+        ),
+        'utf8'
+    );
+
+    let responseTrigger = await flowService.sendTx({
+        transaction: trasTrigger,
+        args: [
+            
+        ]
+    });
+
+    console.log(responseTrigger);
+}
+
+async function queryHistory() {
+    const script = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/send-recv-message/queryHistory.cdc'
+        ),
+        'utf8'
+    );
+
+    let rstData = await flowService.executeScripts({
+        script: script,
+        args: [
+
+        ]    
+    });
+
+    for (let addr in rstData) {
+        console.log(addr, '******************************************');
+        
+        for (let fromChain in rstData[addr]) {
+            console.log('###', fromChain, '###');
+            console.log(rstData[addr][fromChain]);
+        }
+        console.log('**********************************************************end\n')
+    }
+}
+
 // await simuRegister();
 // await simuRequest();
-await simulateServer(args[2], args[3]);
-// await simuRequest();
+// await simulateServer(args[2], args[3]);
+await queryHistory();
