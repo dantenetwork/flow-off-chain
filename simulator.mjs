@@ -368,7 +368,38 @@ async function queryHistory() {
     }
 }
 
+async function testPanic() {
+    const tras = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './test/transactions/testPanic.cdc'
+        ),
+        'utf8'
+    );
+
+    let response = await flowService.sendTx({
+        transaction: tras,
+        args: [
+            
+        ]
+    });
+
+    // console.log(response);
+    try {
+        let rst = fcl.tx(response.transactionId);
+        console.log(await rst.onceSealed());
+        // console.log(await rst.onceFinalized());
+
+    } catch (error) {
+        console.log('*****************');
+        console.log(error);
+        console.log('*****************');
+    }
+}
+
 // await simuRegister();
 // await simuRequest();
 // await simulateServer(args[2], args[3]);
-await queryHistory();
+// await queryHistory();
+await testPanic();
+
