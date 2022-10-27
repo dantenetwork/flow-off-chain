@@ -226,6 +226,15 @@ async function simulateServer(chain, msgID) {
 
     await submitSimuCompute(fromChain, contractName, actionName, session, msgPayload);
 
+    try {
+        let rst = fcl.tx(response.transactionId);
+        console.log(await rst.onceSealed());
+        // console.log(await rst.onceFinalized());
+
+    } catch (error) {
+        console.log(error);
+    }
+
     await trigger();
 }
 
@@ -312,7 +321,14 @@ async function simuRequest() {
             ]
         });
     
-        console.log(response);
+        try {
+            let rst = fcl.tx(response.transactionId);
+            console.log(await rst.onceSealed());
+            // console.log(await rst.onceFinalized());
+    
+        } catch (error) {
+            console.log(error);
+        }
 
         await trigger();
 
@@ -322,6 +338,28 @@ async function simuRequest() {
 }
 
 async function trigger() {
+    const recverLink = 'receivedMessageVault';
+
+    let toExec = await queryExecution();
+    console.log(toExec);
+
+    var fetchExecution;
+
+    for (let key in toExec) {
+        for (let idx in toExec[key]) {
+            fetchExecution = {};
+            fetchExecution.address = key;
+            fetchExecution.msgID = toExec[key][idx][0];
+            fetchExecution.fromChain = toExec[key][idx][1];
+            break;
+        }
+    }
+
+    if (fetchExecution == undefined) {
+        console.log('No executions');
+        return;
+    }
+
     // after submitted 
     const trasTrigger = fs.readFileSync(
         path.join(
@@ -334,11 +372,114 @@ async function trigger() {
     let responseTrigger = await flowService.sendTx({
         transaction: trasTrigger,
         args: [
-            
+            fcl.arg(fetchExecution.address, types.Address),
+            fcl.arg(fetchExecution.msgID, types.UInt128),
+            fcl.arg(fetchExecution.fromChain, types.String),
+            fcl.arg(recverLink, types.String)
         ]
     });
 
-    console.log(responseTrigger);
+    try {
+        let rst = fcl.tx(responseTrigger.transactionId);
+        console.log(await rst.onceSealed());
+
+    } catch (error) {
+        console.log(error);
+        console.log(fetchExecution);
+        await submitAbandoned(fetchExecution.msgID, fetchExecution.fromChain, fetchExecution.address);
+    }
+}
+
+async function submitAbandoned(msgID, fromChain, recver) {
+    const submitter = flowService.signerFlowAddress;
+    
+    const script = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/crypto-dev/GenerateAbandoned.cdc'
+        ),
+        'utf8'
+    );
+
+    try {
+        let rstData = await flowService.executeScripts({
+            script: script,
+            args: [
+                fcl.arg(msgID.toString(10), types.UInt128),
+                fcl.arg(fromChain, types.String),
+                fcl.arg(submitter, types.Address)
+            ]    
+        });
+        
+        console.log(rstData);
+        const toBeSign = rstData;
+        // this can be verified by Flow CLI
+        const signature = flowService.sign2string(toBeSign);
+        console.log(signature);
+
+        const tras = fs.readFileSync(
+            path.join(
+                process.cwd(),
+                './transactions/send-recv-message/submitAbandoned.cdc'
+            ),
+            'utf8'
+        );
+    
+        let response = await flowService.sendTx({
+            transaction: tras,
+            args: [
+                fcl.arg(msgID.toString(10), types.UInt128),
+                fcl.arg(fromChain, types.String),
+                fcl.arg(submitter, types.Address),
+                fcl.arg(signature, types.String),
+                // In official version, the address below shall be the same as `resourceAccount`
+                fcl.arg(recver, types.Address),
+                // and the link shall be got from `CrossChain.registeredRecvAccounts`
+                fcl.arg('receivedMessageVault', types.String)
+            ]
+        });
+    
+        try {
+            let rst = fcl.tx(response.transactionId);
+            console.log(await rst.onceSealed());
+            // console.log(await rst.onceFinalized());
+    
+        } catch (error) {
+            console.log(error);
+        }
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function queryExecution() {
+    const script = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/send-recv-message/queryExecutions.cdc'
+        ),
+        'utf8'
+    );
+
+    let rstData = await flowService.executeScripts({
+        script: script,
+        args: [
+
+        ]    
+    });
+
+    var toExec = {};
+
+    for (let key in rstData) {
+        toExec[key] = [];
+        for (let idx in rstData[key]) {
+            // console.log(rstData[key][idx]);
+            toExec[key].push([rstData[key][idx].verifiedMessage.id, rstData[key][idx].verifiedMessage.fromChain]);
+        }
+    }
+
+    return toExec;
 }
 
 async function queryHistory() {
@@ -398,8 +539,12 @@ async function testPanic() {
 }
 
 // await simuRegister();
-// await simuRequest();
+await simuRequest();
 // await simulateServer(args[2], args[3]);
 // await queryHistory();
-await testPanic();
+// await testPanic();
+
+// await queryExecution();
+// await trigger();
+// await submitAbandoned(args[2], args[3], args[4]);
 

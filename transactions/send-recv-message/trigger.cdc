@@ -1,7 +1,7 @@
 import ReceivedMessageContract from 0xProfile
 import CrossChain from 0xProfile
 
-transaction(){
+transaction(recver: Address, msgID: UInt128, fromChain: String, recverLink: String){
     let signer: AuthAccount;
 
     prepare(signer: AuthAccount){
@@ -9,12 +9,9 @@ transaction(){
     }
 
     execute {
-        for recvKey in CrossChain.registeredRecvAccounts.keys {
-            if let recverRef = ReceivedMessageContract.getRecverRef(recverAddress: recvKey, link: CrossChain.registeredRecvAccounts[recvKey]!) {
-                if recverRef.isExecutable() {
-                    recverRef.trigger();
-                    break;
-                }
+        if let recverRef = ReceivedMessageContract.getRecverRef(recverAddress: recver, link: recverLink) {
+            if recverRef.isExecutable() {
+                recverRef.trigger(msgID: msgID, fromChain: fromChain);
             }
         }
     }
