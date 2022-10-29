@@ -170,7 +170,14 @@ async function submitSimuCompute(fromChain, contractName, actionName, session, m
             ]
         });
     
-        console.log(response);
+        try {
+            let rst = fcl.tx(response.transactionId);
+            console.log(await rst.onceSealed());
+            // console.log(await rst.onceFinalized());
+    
+        } catch (error) {
+            console.log(error);
+        }
 
     } catch (error) {
         console.error(error);
@@ -215,7 +222,7 @@ async function simulateServer(chain, msgID) {
     const actionName = Buffer.from(rstData.session.callback, 'utf-8').toString('utf-8');
 
     const session = new mtonflow.Session(Number(rstData.session.id), 
-                                        Number(rstData.session.type), 
+                                        3, 
                                         await fcl.config.get('Profile'),
                                         new Uint8Array(rstData.session.callback));
     
@@ -226,14 +233,41 @@ async function simulateServer(chain, msgID) {
 
     await submitSimuCompute(fromChain, contractName, actionName, session, msgPayload);
 
-    try {
-        let rst = fcl.tx(response.transactionId);
-        console.log(await rst.onceSealed());
-        // console.log(await rst.onceFinalized());
+    await trigger();
+}
 
-    } catch (error) {
-        console.log(error);
-    }
+async function simulatorErrorServer(chain, msgID) {
+    const script = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/send-recv-message/querySendMessageByID.cdc'
+        ),
+        'utf8'
+    );
+
+    let rstData = await flowService.executeScripts({
+        script: script,
+        args: [
+            fcl.arg(chain, types.String),
+            fcl.arg(msgID, types.UInt128)
+        ]
+    });
+
+    const fromChain = rstData.toChain;
+    const contractName = '0x' + Buffer.from(rstData.sender, 'utf-8').toString('hex');
+    const actionName = Buffer.from(rstData.session.callback, 'utf-8').toString('utf-8');
+
+    const session = new mtonflow.Session(Number(rstData.session.id), 
+                                        105, 
+                                        await fcl.config.get('Profile'),
+                                        new Uint8Array(rstData.session.callback));
+    
+    const msgItem = new mtonflow.MessageItem("Error", mtonflow.MsgType.cdcU8, 104, 
+                                            await fcl.config.get('Profile'));
+
+    const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
+
+    await submitSimuCompute(fromChain, contractName, actionName, session, msgPayload);
 
     await trigger();
 }
@@ -539,7 +573,7 @@ async function testPanic() {
 }
 
 // await simuRegister();
-await simuRequest();
+// await simuRequest();
 // await simulateServer(args[2], args[3]);
 // await queryHistory();
 // await testPanic();
@@ -547,4 +581,6 @@ await simuRequest();
 // await queryExecution();
 // await trigger();
 // await submitAbandoned(args[2], args[3], args[4]);
+
+await simulatorErrorServer(args[2], args[3]);
 
