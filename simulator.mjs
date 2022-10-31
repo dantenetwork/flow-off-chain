@@ -262,8 +262,10 @@ async function simulatorErrorServer(chain, msgID) {
                                         await fcl.config.get('Profile'),
                                         new Uint8Array(rstData.session.callback));
     
-    const msgItem = new mtonflow.MessageItem("Error", mtonflow.MsgType.cdcU8, 104, 
+    const msgItem = new mtonflow.MessageItem("Error", mtonflow.MsgType.cdcU8, 105, 
                                             await fcl.config.get('Profile'));
+
+    console.log('*******************************', msgItem.value);
 
     const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
 
@@ -291,7 +293,7 @@ async function simuRequest() {
 
     const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
 
-    const session = new mtonflow.Session(99, 2, await fcl.config.get('Profile'), new Uint8Array([0x11, 0x11, 0x11, 0x11]), new Uint8Array([0x22]), new Uint8Array([0x33])); 
+    const session = new mtonflow.Session(msgID, 2, await fcl.config.get('Profile'), new Uint8Array([0x11, 0x11, 0x11, 0x11]), new Uint8Array([0x22]), new Uint8Array([0x33])); 
 
     const script = fs.readFileSync(
         path.join(
@@ -573,7 +575,7 @@ async function testPanic() {
 }
 
 // await simuRegister();
-// await simuRequest();
+await simuRequest();
 // await simulateServer(args[2], args[3]);
 // await queryHistory();
 // await testPanic();
@@ -582,5 +584,5 @@ async function testPanic() {
 // await trigger();
 // await submitAbandoned(args[2], args[3], args[4]);
 
-await simulatorErrorServer(args[2], args[3]);
+// await simulatorErrorServer(args[2], args[3]);
 
