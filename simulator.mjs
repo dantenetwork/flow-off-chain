@@ -52,7 +52,18 @@ async function getNextSubmittionID(router, recver, fromChain) {
     return msgID;
 }
 
-async function simuRegister() {
+export async function settlement(response) {
+    try {
+        let rst = fcl.tx(response.transactionId);
+        console.log(await rst.onceSealed());
+        // console.log(await rst.onceFinalized());
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+export async function simuRegister() {
     const script = fs.readFileSync(
         path.join(
             process.cwd(),
@@ -373,7 +384,7 @@ async function simuRequest() {
     }
 }
 
-async function trigger() {
+export async function trigger() {
     const recverLink = 'receivedMessageVault';
 
     let toExec = await queryExecution();
@@ -575,7 +586,7 @@ async function testPanic() {
 }
 
 // await simuRegister();
-await simuRequest();
+// await simuRequest();
 // await simulateServer(args[2], args[3]);
 // await queryHistory();
 // await testPanic();
