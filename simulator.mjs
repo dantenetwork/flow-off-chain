@@ -100,7 +100,7 @@ export async function simuRegister() {
         ]
     });
 
-    console.log(response);
+    await settlement(response);
 }
 
 async function submitSimuCompute(fromChain, contractName, actionName, session, msgPayload) {
@@ -195,7 +195,7 @@ async function submitSimuCompute(fromChain, contractName, actionName, session, m
     }
 }
 
-async function simulateServer(chain, msgID) {
+export async function simulateServer(chain, msgID) {
     const script = fs.readFileSync(
         path.join(
             process.cwd(),
@@ -247,7 +247,7 @@ async function simulateServer(chain, msgID) {
     await trigger();
 }
 
-async function simulatorErrorServer(chain, msgID) {
+export async function simulatorErrorServer(chain, msgID) {
     const script = fs.readFileSync(
         path.join(
             process.cwd(),
@@ -285,7 +285,7 @@ async function simulatorErrorServer(chain, msgID) {
     await trigger();
 }
 
-async function simuRequest() {
+export async function simuRequest() {
 
     const recver = '0x01cf0e2f2f715450';
     const fromChain = 'POLKADOT';
@@ -399,6 +399,8 @@ export async function trigger() {
             fetchExecution.msgID = toExec[key][idx][0];
             fetchExecution.fromChain = toExec[key][idx][1];
             break;
+            // console.log(toExec[key][idx][0]);
+            // console.log(toExec[key][idx][1]);
         }
     }
 
@@ -437,7 +439,7 @@ export async function trigger() {
     }
 }
 
-async function submitAbandoned(msgID, fromChain, recver) {
+export async function submitAbandoned(msgID, fromChain, recver) {
     const submitter = flowService.signerFlowAddress;
     
     const script = fs.readFileSync(
@@ -500,7 +502,7 @@ async function submitAbandoned(msgID, fromChain, recver) {
     }
 }
 
-async function queryExecution() {
+export async function queryExecution() {
     const script = fs.readFileSync(
         path.join(
             process.cwd(),
@@ -522,14 +524,14 @@ async function queryExecution() {
         toExec[key] = [];
         for (let idx in rstData[key]) {
             // console.log(rstData[key][idx]);
-            toExec[key].push([rstData[key][idx].verifiedMessage.id, rstData[key][idx].verifiedMessage.fromChain]);
+            toExec[key].push([rstData[key][idx].verifiedMessage.messageCore.id, rstData[key][idx].verifiedMessage.messageCore.fromChain]);
         }
     }
 
     return toExec;
 }
 
-async function queryHistory() {
+export async function queryHistory() {
     const script = fs.readFileSync(
         path.join(
             process.cwd(),

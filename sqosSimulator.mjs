@@ -20,8 +20,14 @@ const sha3_256FromString = (msg) => {
     return sha.digest();
 };
 
-const flowService = new FlowService('0xf8d6e0586b0a20c7', 
-                                    '69e7e51ead557351ade7a575e947c4d4bd19dd8a6cdf00c51f9c7f6f721b72dc',
+const fsAlice = new FlowService('0x01cf0e2f2f715450', 
+                                    'c9193930b34dd498378e36c35118a627d9eb500f6fd69b16d8e59db7cc8f5bb3',
+                                    0,
+                                    sha3_256FromString,
+                                    'p256');
+
+const fsBob = new FlowService('0x01cf0e2f2f715450', 
+                                    'd95472318e773b2046b078ae252c42082752c7b7876ce2770a2d3e00b02bbed5',
                                     0,
                                     sha3_256FromString,
                                     'p256');
@@ -44,4 +50,10 @@ async function simuSubmitHidden() {
 
 }
 
-await simubase.simuRegister();
+async function simuChallenge() {
+
+}
+
+// await simubase.simuRegister();
+// await simubase.simuRequest();
+await simubase.trigger();
