@@ -116,8 +116,7 @@ async function generateHidden(submitter, messageHash, randNumber) {
     return hiddenData;
 }
 
-async function simuSubmitHidden() {
-    const recver = '0x01cf0e2f2f715450';
+async function _hidden_reveal_base(recver, submitter) {
     const fromChain = 'POLKADOT';
     const contractName = recver;
     const actionName = 'computationServer';
@@ -125,12 +124,7 @@ async function simuSubmitHidden() {
 
     const sender = '0101010101010101010101010101010101010101010101010101010101010101';
     const signer = '0101010101010101010101010101010101010101010101010101010101010101';
-
-    const submitter = '0xf8d6e0586b0a20c7';
-
-    // console.log(msgID);
-    // return;
-
+    
     const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, [0x12, 0x34, 0x56, 0x78], await fcl.config.get('Profile'));
     const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
 
@@ -166,15 +160,21 @@ async function simuSubmitHidden() {
         ]    
     });
 
-    // console.log(rstData.toBeSign);
-    // const toBeSign = rstData.toBeSign;
-    // this can be verified by Flow CLI
-    // const signature = simubase.flowService.sign2string(toBeSign);
-    // console.log(signature);
+    rstData.originMessage.sqos = InputSQoSArray;
+    rstData.originMessage.content.data = msgPayload;
+    rstData.originMessage.session = session;
+
+    return rstData;
+}
+
+async function simuSubmitHidden() {
+    const recver = '0x01cf0e2f2f715450';
+    const submitter = '0xf8d6e0586b0a20c7';
+    const rstData = await _hidden_reveal_base(recver, submitter);
 
     // console.log(rstData.originMessage.messageHash);
     const randNumber = Math.floor(Math.random()*Max_UInt32);
-    hiddenRand.set(fromChain+msgID, randNumber);
+    hiddenRand.set(rstData.originMessage.fromChain+rstData.originMessage.id, randNumber);
     console.log(hiddenRand);
 
     const hiddenData = await generateHidden(submitter, rstData.originMessage.messageHash, randNumber);
@@ -194,8 +194,8 @@ async function simuSubmitHidden() {
         transaction: tras,
         args: [
             fcl.arg(hiddenData.hiddenData, types.String),
-            fcl.arg(fromChain, types.String),
-            fcl.arg(msgID.toString(10), types.UInt128),
+            fcl.arg(rstData.originMessage.fromChain, types.String),
+            fcl.arg(rstData.originMessage.id.toString(10), types.UInt128),
             fcl.arg(signature, types.String),
             // In official version, the address below shall be the same as `resourceAccount`
             fcl.arg(recver, types.Address),
@@ -205,6 +205,58 @@ async function simuSubmitHidden() {
     });
 
     simubase.settlement(response);
+}
+
+async function simuSubmitReveal(randNumber) {
+    const recver = '0x01cf0e2f2f715450';
+    const submitter = '0xf8d6e0586b0a20c7';
+    const rstData = await _hidden_reveal_base(recver, submitter);
+
+    console.log(rstData);
+
+    const toBeSign = rstData.toBeSign;
+    // this can be verified by Flow CLI
+    const signature = simubase.flowService.sign2string(toBeSign);
+    console.log(signature);
+
+    const tras = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './transactions/send-recv-message/submitReveal.cdc'
+        ),
+        'utf8'
+    );
+    
+    let response = await simubase.flowService.sendTx({
+        transaction: tras,
+        args: [
+            fcl.arg(rstData.originMessage.id.toString(10), types.UInt128),
+            fcl.arg(rstData.originMessage.fromChain, types.String),
+            fcl.arg(Array.from(Buffer.from(rstData.originMessage.sender, 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
+            fcl.arg(Array.from(Buffer.from(rstData.originMessage.signer, 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
+            rstData.originMessage.sqos.get_fcl_arg(),
+            fcl.arg(rstData.originMessage.content.accountAddress, types.Address),
+            // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
+            fcl.arg(rstData.originMessage.content.link, types.String),
+            rstData.originMessage.content.data.get_fcl_arg(),
+            rstData.originMessage.session.get_fcl_arg(),
+            fcl.arg(signature, types.String),
+            // In official version, the address below shall be the same as `resourceAccount`
+            fcl.arg(recver, types.Address),
+            // and the link shall be got from `CrossChain.registeredRecvAccounts`
+            fcl.arg('receivedMessageVault', types.String),
+            fcl.arg(randNumber, types.UInt32),
+        ]
+    });
+
+    try {
+        let rst = fcl.tx(response.transactionId);
+        console.log(await rst.onceSealed());
+        // console.log(await rst.onceFinalized());
+
+    } catch (error) {
+        console.log(error);
+    }
 }
 
 async function simuChallenge(challenger, msgID, fromChain, recver) {
@@ -281,9 +333,10 @@ async function simuChallenge(challenger, msgID, fromChain, recver) {
 // await RegisterChallenger('Alice');
 // await RegisterChallenger('Bob');
 // await simubase.simuRequest();
-// await simubase.trigger();
+await simubase.trigger();
 
 // challenger, msgID, fromChain, recver
 // await simuChallenge(args[2], args[3], args[4], args[5]);
 
-await simuSubmitHidden();
+// await simuSubmitHidden();
+// await simuSubmitReveal(args[2]);
