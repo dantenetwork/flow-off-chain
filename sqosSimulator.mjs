@@ -34,6 +34,8 @@ const fsBob = new FlowService('0x179b6b1cb6755e31',
 
 const Max_UInt32 = 4_294_967_295;
 
+const hiddenRand = new Map();
+
 // async function testRandom() {
 
 //     let x = Math.floor(Math.random() * Max_UInt32);
@@ -93,8 +95,116 @@ async function RegisterChallenger(router) {
     await simubase.settlement(response);
 }
 
-async function simuSubmitHidden() {
+async function generateHidden(submitter, messageHash, randNumber) {
+    const scriptHidden = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/crypto-dev/GenerateHidden.cdc'
+        ),
+        'utf8'
+    );
 
+    let hiddenData = await simubase.flowService.executeScripts({
+        script: scriptHidden,
+        args: [
+            fcl.arg(submitter, types.Address),
+            fcl.arg(messageHash, types.String),
+            fcl.arg(randNumber.toString(10), types.UInt32),
+        ]    
+    });
+
+    return hiddenData;
+}
+
+async function simuSubmitHidden() {
+    const recver = '0x01cf0e2f2f715450';
+    const fromChain = 'POLKADOT';
+    const contractName = recver;
+    const actionName = 'computationServer';
+    const msgID = await simubase.getNextSubmittionID("0xf8d6e0586b0a20c7", recver, fromChain);
+
+    const sender = '0101010101010101010101010101010101010101010101010101010101010101';
+    const signer = '0101010101010101010101010101010101010101010101010101010101010101';
+
+    const submitter = '0xf8d6e0586b0a20c7';
+
+    // console.log(msgID);
+    // return;
+
+    const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, [0x12, 0x34, 0x56, 0x78], await fcl.config.get('Profile'));
+    const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
+
+    const msgItem = new mtonflow.MessageItem("nums", mtonflow.MsgType.cdcVecU32, [11, 12, 13, 14, 15], 
+                                                await fcl.config.get('Profile'));
+
+    const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
+
+    const session = new mtonflow.Session(msgID, 2, await fcl.config.get('Profile'), new Uint8Array([0x11, 0x11, 0x11, 0x11]), new Uint8Array([0x22]), new Uint8Array([0x33])); 
+
+    const script = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/crypto-dev/GenerateSubmittion.cdc'
+        ),
+        'utf8'
+    );
+
+    let rstData = await simubase.flowService.executeScripts({
+        script: script,
+        args: [
+            fcl.arg(msgID.toString(10), types.UInt128),
+            fcl.arg(fromChain, types.String),
+            fcl.arg(Array.from(Buffer.from(sender, 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
+            fcl.arg(Array.from(Buffer.from(signer, 'hex')).map(num => {return String(num);}), types.Array(types.UInt8)),
+            InputSQoSArray.get_fcl_arg(),
+            fcl.arg(contractName, types.Address),
+            // normally, use `Buffer.from('interface on Flow', 'utf8')` when messages sent to Flow
+            fcl.arg(actionName, types.String),
+            msgPayload.get_fcl_arg(),
+            session.get_fcl_arg(),
+            fcl.arg(submitter, types.Address)
+        ]    
+    });
+
+    // console.log(rstData.toBeSign);
+    // const toBeSign = rstData.toBeSign;
+    // this can be verified by Flow CLI
+    // const signature = simubase.flowService.sign2string(toBeSign);
+    // console.log(signature);
+
+    // console.log(rstData.originMessage.messageHash);
+    const randNumber = Math.floor(Math.random()*Max_UInt32);
+    hiddenRand.set(fromChain+msgID, randNumber);
+    console.log(hiddenRand);
+
+    const hiddenData = await generateHidden(submitter, rstData.originMessage.messageHash, randNumber);
+    // console.log(hiddenData);
+    const signature = simubase.flowService.sign2string(hiddenData.toBeSign);
+    // console.log(signature);
+    // return;
+    const tras = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './transactions/send-recv-message/submitHidden.cdc'
+        ),
+        'utf8'
+    );
+
+    let response = await simubase.flowService.sendTx({
+        transaction: tras,
+        args: [
+            fcl.arg(hiddenData.hiddenData, types.String),
+            fcl.arg(fromChain, types.String),
+            fcl.arg(msgID.toString(10), types.UInt128),
+            fcl.arg(signature, types.String),
+            // In official version, the address below shall be the same as `resourceAccount`
+            fcl.arg(recver, types.Address),
+            // and the link shall be got from `CrossChain.registeredRecvAccounts`
+            fcl.arg('receivedMessageVault', types.String),
+        ]
+    });
+
+    simubase.settlement(response);
 }
 
 async function simuChallenge(challenger, msgID, fromChain, recver) {
@@ -171,7 +281,9 @@ async function simuChallenge(challenger, msgID, fromChain, recver) {
 // await RegisterChallenger('Alice');
 // await RegisterChallenger('Bob');
 // await simubase.simuRequest();
-await simubase.trigger();
+// await simubase.trigger();
 
 // challenger, msgID, fromChain, recver
 // await simuChallenge(args[2], args[3], args[4], args[5]);
+
+await simuSubmitHidden();

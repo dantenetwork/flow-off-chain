@@ -19,13 +19,13 @@ const sha3_256FromString = (msg) => {
     return sha.digest();
 };
 
-const flowService = new FlowService('0xf8d6e0586b0a20c7', 
+export const flowService = new FlowService('0xf8d6e0586b0a20c7', 
                                     '69e7e51ead557351ade7a575e947c4d4bd19dd8a6cdf00c51f9c7f6f721b72dc',
                                     0,
                                     sha3_256FromString,
                                     'p256');
 
-async function getNextSubmittionID(router, recver, fromChain) {
+export async function getNextSubmittionID(router, recver, fromChain) {
     const scriptID = fs.readFileSync(
         path.join(
             process.cwd(),
