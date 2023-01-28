@@ -355,6 +355,8 @@ async function commanders() {
         .version('SQoS for Flow Simulator-v0.1.0')
         .option('--regrouter', 'register a test router', list)
         .option('--regchallenger <challenger name(`Alice` or `Bob`)>', 'register a test challenger, and the name needs to be `Alice` or `Bob`', list)
+        .option('--simurequest', 'simulate a normal computation request', list)
+        .option('--simucomputation <chain name><message id>', 'simulate a normal computation server on the other chain', list)
         .parse(process.argv);
         
     if (program.opts().regrouter) {
@@ -368,13 +370,30 @@ async function commanders() {
 
     } else if (program.opts().regchallenger) {
         if (program.opts().regchallenger.length != 1) {
-            console.log('1 arguments are needed, but ' + program.opts().price.length + ' provided');
+            console.log('1 arguments are needed, but ' + program.opts().regchallenger.length + ' provided');
             return;
         }
 
         console.log(`register a test challenger ${program.opts().regchallenger[0]}.`);
         await RegisterChallenger(program.opts().regchallenger[0]);
-    }
+    } else if (program.opts().simurequest) {
+        if (program.opts().simurequest.length != 0) {
+            console.log('0 arguments are needed, but ' + program.opts().simurequest.length + ' provided');
+            return;
+        }
+
+        console.log(`simulate a normal computation request.`);
+        await simubase.simuRequest();
+
+    } else if (program.opts().simucomputation) {
+        if (program.opts().simucomputation.length != 2) {
+            console.log('2 arguments are needed, but ' + program.opts().simucomputation.length + ' provided');
+            return;
+        }
+
+        console.log(`simulate a computation server on the other chain`);
+        await simubase.simulateServer(program.opts().simucomputation[0], program.opts().simucomputation[1]);
+    } 
 }
 
 await commanders();
