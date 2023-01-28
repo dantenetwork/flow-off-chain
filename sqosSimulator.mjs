@@ -2,6 +2,7 @@ import FlowService from './flowoffchain.mjs'
 import fcl from '@onflow/fcl';
 import * as types from "@onflow/types";
 import { SHA3 } from 'sha3';
+import {program} from 'commander';
 
 import fs from 'fs';
 import path from 'path';
@@ -333,10 +334,47 @@ async function simuChallenge(challenger, msgID, fromChain, recver) {
 // await RegisterChallenger('Alice');
 // await RegisterChallenger('Bob');
 // await simubase.simuRequest();
-await simubase.trigger();
+// await simubase.trigger();
 
 // challenger, msgID, fromChain, recver
 // await simuChallenge(args[2], args[3], args[4], args[5]);
 
 // await simuSubmitHidden();
 // await simuSubmitReveal(args[2]);
+
+function list(val) {
+    if (val == undefined) {
+        return [];
+    } else {
+        return val.split(',');
+    }
+}
+
+async function commanders() {
+    program
+        .version('SQoS for Flow Simulator-v0.1.0')
+        .option('--regrouter', 'register a test router', list)
+        .option('--regchallenger <challenger name(`Alice` or `Bob`)>', 'register a test challenger, and the name needs to be `Alice` or `Bob`', list)
+        .parse(process.argv);
+        
+    if (program.opts().regrouter) {
+        if (program.opts().regrouter.length != 0) {
+            console.log('0 arguments are needed, but ' + program.opts().regrouter.length + ' provided');
+            return;
+        }
+
+        console.log('register a test router.');
+        await simubase.simuRegister();
+
+    } else if (program.opts().regchallenger) {
+        if (program.opts().regchallenger.length != 1) {
+            console.log('1 arguments are needed, but ' + program.opts().price.length + ' provided');
+            return;
+        }
+
+        console.log(`register a test challenger ${program.opts().regchallenger[0]}.`);
+        await RegisterChallenger(program.opts().regchallenger[0]);
+    }
+}
+
+await commanders();
