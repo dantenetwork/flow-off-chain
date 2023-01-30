@@ -330,6 +330,26 @@ async function simuChallenge(challenger, msgID, fromChain, recver) {
     }
 }
 
+async function checkSentOutMessagesFromFlow() {
+    const rstData = await simubase.querySentMessagesFromFlow();
+    for (var key in rstData) {
+        console.log(`#####################Sender######################`);
+        console.log(`From sender ${key}`);
+        for (var idx in rstData[key]) {
+            console.log(`********************Message*******************`);
+            console.log('@@@ message id:', rstData[key][idx].id);
+            console.log('from chain:', rstData[key][idx].fromChain);
+            console.log('to chain:', rstData[key][idx].toChain);
+            console.log('sqos:', rstData[key][idx].sqos.sqosItems);
+            console.log(`contractName: ${rstData[key][idx].contractName}`);
+            console.log(`actionName: ${rstData[key][idx].actionName}`);
+            console.log('data:', rstData[key][idx].data.items);
+            console.log('session id:', rstData[key][idx].session.id);
+            console.log('session type:', rstData[key][idx].session.type);
+        }
+    }
+}
+
 // await simubase.simuRegister();
 // await RegisterChallenger('Alice');
 // await RegisterChallenger('Bob');
@@ -350,40 +370,56 @@ function list(val) {
     }
 }
 
+function list_line(val) {
+    return val.split('|');
+}
+
 async function commanders() {
     program
         .version('SQoS for Flow Simulator-v0.1.0')
-        .option('--regrouter', 'register a test router', list)
-        .option('--regchallenger <challenger name(`Alice` or `Bob`)>', 'register a test challenger, and the name needs to be `Alice` or `Bob`', list)
-        .option('--simurequest', 'simulate a normal computation request', list)
-        .option('--simucomputation <chain name><message id>', 'simulate a normal computation server on the other chain', list)
+        .option('--regrouter', 'register a test router')
+        .option('--regchallenger', 'register a test challenger, and the test challengers are Alice (0x01cf0e2f2f715450) and Bob (0x179b6b1cb6755e31)')
+        .option('--check', 'check messages sent from flow')
+        .option('--simurequest <numbers>', 'simulate a normal computation request. Input example: \'[1,2,3,4]\'. Attention, no spaces!', list_line)
+        .option('--simucomputation <chain name>,<message id>', 'simulate a normal computation server on the other chain. Input example: POLKADOT,1', list)
+        // .option('--example <n>', 'this is an example of commanders')
         .parse(process.argv);
         
     if (program.opts().regrouter) {
-        if (program.opts().regrouter.length != 0) {
-            console.log('0 arguments are needed, but ' + program.opts().regrouter.length + ' provided');
-            return;
-        }
+        // if (program.opts().regrouter.length != 0) {
+        //     console.log('0 arguments are needed, but ' + program.opts().regrouter.length + ' provided');
+        //     return;
+        // }
 
         console.log('register a test router.');
         await simubase.simuRegister();
 
     } else if (program.opts().regchallenger) {
-        if (program.opts().regchallenger.length != 1) {
-            console.log('1 arguments are needed, but ' + program.opts().regchallenger.length + ' provided');
-            return;
-        }
+        // if (program.opts().regchallenger.length != 1) {
+        //     console.log('1 arguments are needed, but ' + program.opts().regchallenger.length + ' provided');
+        //     return;
+        // }
 
-        console.log(`register a test challenger ${program.opts().regchallenger[0]}.`);
-        await RegisterChallenger(program.opts().regchallenger[0]);
+        console.log(`register test challengers`);
+        await RegisterChallenger('Alice');
+        await RegisterChallenger('Bob');
+    } else if (program.opts().check) {
+        // if (program.opts().check.length != 0) {
+        //     console.log('0 arguments are needed, but ' + program.opts().check.length + ' provided');
+        //     return;
+        // }
+
+        console.log(`check messages sent from flow.`);
+        await checkSentOutMessagesFromFlow();
+
     } else if (program.opts().simurequest) {
-        if (program.opts().simurequest.length != 0) {
-            console.log('0 arguments are needed, but ' + program.opts().simurequest.length + ' provided');
+        if (program.opts().simurequest.length != 1) {
+            console.log('1 arguments are needed, but ' + program.opts().simurequest.length + ' provided');
             return;
         }
 
         console.log(`simulate a normal computation request.`);
-        await simubase.simuRequest();
+        await simubase.simuRequest(program.opts().simurequest[0]);
 
     } else if (program.opts().simucomputation) {
         if (program.opts().simucomputation.length != 2) {
@@ -394,6 +430,9 @@ async function commanders() {
         console.log(`simulate a computation server on the other chain`);
         await simubase.simulateServer(program.opts().simucomputation[0], program.opts().simucomputation[1]);
     } 
+    // else if (program.opts().example) {
+    //     console.log('example: ', program.opts().example);
+    // }
 }
 
 await commanders();

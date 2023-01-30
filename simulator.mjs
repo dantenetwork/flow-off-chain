@@ -9,6 +9,7 @@ import path from 'path';
 import * as mtonflow from './messageTypesOnFlow.js';
 import oc from './omnichainCrypto.js'
 import { triggerAsyncId } from 'async_hooks';
+import exp from 'constants';
 
 
 const args = process.argv;
@@ -50,6 +51,25 @@ export async function getNextSubmittionID(router, recver, fromChain) {
     }
 
     return msgID;
+}
+
+export async function querySentMessagesFromFlow() {
+    const scriptID = fs.readFileSync(
+        path.join(
+            process.cwd(),
+            './scripts/send-recv-message/querySendMessages.cdc'
+        ),
+        'utf8'
+    );
+
+    let rstData = await flowService.executeScripts({
+        script: scriptID,
+        args: [
+            
+        ]
+    });
+
+    return rstData;
 }
 
 export async function settlement(response) {
@@ -196,6 +216,8 @@ async function submitSimuCompute(fromChain, contractName, actionName, session, m
 }
 
 export async function simulateServer(chain, msgID) {
+    console.log(chain, msgID);
+    
     const script = fs.readFileSync(
         path.join(
             process.cwd(),
@@ -285,7 +307,7 @@ export async function simulatorErrorServer(chain, msgID) {
     await trigger();
 }
 
-export async function simuRequest() {
+export async function simuRequest(nums) {
 
     const recver = '0x01cf0e2f2f715450';
     const fromChain = 'POLKADOT';
@@ -299,7 +321,8 @@ export async function simuRequest() {
     const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, [0x12, 0x34, 0x56, 0x78], await fcl.config.get('Profile'));
     const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
 
-    const msgItem = new mtonflow.MessageItem("nums", mtonflow.MsgType.cdcVecU32, [11, 12, 13, 14, 15], 
+    // console.log(nums.substring(1, nums.length - 1).split(','));
+    const msgItem = new mtonflow.MessageItem("nums", mtonflow.MsgType.cdcVecU32, nums.substring(1, nums.length - 1).split(','), 
                                                 await fcl.config.get('Profile'));
 
     const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
