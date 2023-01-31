@@ -382,6 +382,7 @@ async function commanders() {
         .option('--check', 'check messages sent from flow')
         .option('--simurequest <numbers>', 'simulate a normal computation request. Input example: \'[1,2,3,4]\'. Attention, no spaces!', list_line)
         .option('--simucomputation <chain name>,<message id>', 'simulate a normal computation server on the other chain. Input example: POLKADOT,1', list)
+        .option('--simu-remote-error <chain name>,<message id>', 'simulate a remote error related to a request from `Requester` on Flow happens on the other chain. Input example: POLKADOT,1', list)
         // .option('--example <n>', 'this is an example of commanders')
         .parse(process.argv);
         
@@ -429,6 +430,14 @@ async function commanders() {
 
         console.log(`simulate a computation server on the other chain`);
         await simubase.simulateServer(program.opts().simucomputation[0], program.opts().simucomputation[1]);
+    } else if (program.opts().simuRemoteError) {
+        if (program.opts().simuRemoteError.length != 2) {
+            console.log('2 arguments are needed, but ' + program.opts().simuRemoteError.length + ' provided');
+            return;
+        }
+
+        console.log('simulate a remote error related to a request from `Requester` on Flow happens on the other chain');
+        await simubase.simulatorErrorServer(program.opts().simuRemoteError[0], program.opts().simuRemoteError[1]);
     } 
     // else if (program.opts().example) {
     //     console.log('example: ', program.opts().example);
