@@ -117,7 +117,7 @@ async function generateHidden(submitter, messageHash, randNumber) {
     return hiddenData;
 }
 
-async function _hidden_reveal_base(recver, submitter) {
+async function _hidden_reveal_base(recver, submitter, nums) {
     const fromChain = 'POLKADOT';
     const contractName = recver;
     const actionName = 'computationServer';
@@ -129,7 +129,7 @@ async function _hidden_reveal_base(recver, submitter) {
     const sqosItem = new mtonflow.SQoSItem(mtonflow.SQoSType.SelectionDelay, [0x12, 0x34, 0x56, 0x78], await fcl.config.get('Profile'));
     const InputSQoSArray = new mtonflow.SQoSItemArray([sqosItem], await fcl.config.get('Profile'));
 
-    const msgItem = new mtonflow.MessageItem("nums", mtonflow.MsgType.cdcVecU32, [11, 12, 13, 14, 15], 
+    const msgItem = new mtonflow.MessageItem("nums", mtonflow.MsgType.cdcVecU32, nums, 
                                                 await fcl.config.get('Profile'));
 
     const msgPayload = new mtonflow.MessagePayload([msgItem], await fcl.config.get('Profile'));
@@ -168,15 +168,15 @@ async function _hidden_reveal_base(recver, submitter) {
     return rstData;
 }
 
-async function simuSubmitHidden() {
+async function simuSubmitHidden(nums) {
     const recver = '0x01cf0e2f2f715450';
     const submitter = '0xf8d6e0586b0a20c7';
-    const rstData = await _hidden_reveal_base(recver, submitter);
+    const rstData = await _hidden_reveal_base(recver, submitter, nums.substring(1, nums.length - 1).split(','));
 
     // console.log(rstData.originMessage.messageHash);
     const randNumber = Math.floor(Math.random()*Max_UInt32);
     hiddenRand.set(rstData.originMessage.fromChain+rstData.originMessage.id, randNumber);
-    console.log(hiddenRand);
+    console.log('The random number used to generate the commitment is: ', hiddenRand);
 
     const hiddenData = await generateHidden(submitter, rstData.originMessage.messageHash, randNumber);
     // console.log(hiddenData);
@@ -208,10 +208,10 @@ async function simuSubmitHidden() {
     simubase.settlement(response);
 }
 
-async function simuSubmitReveal(randNumber) {
+async function simuSubmitReveal(randNumber, nums) {
     const recver = '0x01cf0e2f2f715450';
     const submitter = '0xf8d6e0586b0a20c7';
-    const rstData = await _hidden_reveal_base(recver, submitter);
+    const rstData = await _hidden_reveal_base(recver, submitter, nums.substring(1, nums.length - 1).split(','));
 
     console.log(rstData);
 
@@ -350,6 +350,15 @@ async function checkSentOutMessagesFromFlow() {
     }
 }
 
+async function simuAbandoned(fromChain) {
+    const router = simubase.flowService.signerFlowAddress;
+    const recver = '0x01cf0e2f2f715450';
+
+    const msgID = await simubase.getNextSubmittionID(router, recver, fromChain);
+
+    await simubase.submitAbandoned(msgID, fromChain, recver);
+}
+
 // await simubase.simuRegister();
 // await RegisterChallenger('Alice');
 // await RegisterChallenger('Bob');
@@ -383,6 +392,10 @@ async function commanders() {
         .option('--simurequest <numbers>', 'simulate a normal computation request. Input example: \'[1,2,3,4]\'. Attention, no spaces!', list_line)
         .option('--simucomputation <chain name>,<message id>', 'simulate a normal computation server on the other chain. Input example: POLKADOT,1', list)
         .option('--simu-remote-error <chain name>,<message id>', 'simulate a remote error related to a request from `Requester` on Flow happens on the other chain. Input example: POLKADOT,1', list)
+        .option('--simu-abandoned <from chain name>', 'simulate an error happening when submitting a message to any receiver on Flow', list)
+        .option('--simu-submit-hidden <numbers>', 'simulate the hidden step in submitting a message with `Hidden & Reveal` SQoS Item. Input example: \'[1,2,3,4]\'', list_line)
+        .option('--simu-submit-reveal <random number>|<numbers>', 'simulate the reveal step in submitting a message with `Hidden & Reveal` SQoS Item. The `random number` can be found in the output of the previous hidden step. Input example: \'11223344|[1,2,3,4]\'', list_line)
+        .option('--trigger', 'trigger an execution manually')
         // .option('--example <n>', 'this is an example of commanders')
         .parse(process.argv);
         
@@ -438,7 +451,35 @@ async function commanders() {
 
         console.log('simulate a remote error related to a request from `Requester` on Flow happens on the other chain');
         await simubase.simulatorErrorServer(program.opts().simuRemoteError[0], program.opts().simuRemoteError[1]);
-    } 
+    } else if (program.opts().simuAbandoned) {
+        if (program.opts().simuAbandoned.length != 1) {
+            console.log('1 arguments are needed, but ' + program.opts().simuAbandoned.length + ' provided');
+            return;
+        }
+
+        console.log('simulate an error happening when submitting a message to any receiver on Flow');
+        await simuAbandoned(program.opts().simuAbandoned[0]);
+    } else if (program.opts().simuSubmitHidden) {
+        if (program.opts().simuSubmitHidden.length != 1) {
+            console.log('1 arguments are needed, but ' + program.opts().simuSubmitHidden.length + ' provided');
+            return;
+        }
+
+        console.log('simulate the hidden step in submitting a message with `Hidden & Reveal` SQoS Item.');
+        await simuSubmitHidden(program.opts().simuSubmitHidden[0]);
+
+    } else if (program.opts().simuSubmitReveal) {
+        if (program.opts().simuSubmitReveal.length != 2) {
+            console.log('2 arguments are needed, but ' + program.opts().simuSubmitReveal.length + ' provided');
+            return;
+        }
+
+        console.log('simulate the reveal step in submitting a message with `Hidden & Reveal` SQoS Item.');
+        await simuSubmitReveal(program.opts().simuSubmitReveal[0], program.opts().simuSubmitReveal[1]);
+    } else if (program.opts().trigger) {
+        console.log('trigger an execution manually');
+        await simubase.trigger();
+    }
     // else if (program.opts().example) {
     //     console.log('example: ', program.opts().example);
     // }
