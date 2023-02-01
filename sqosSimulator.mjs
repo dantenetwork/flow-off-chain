@@ -395,6 +395,7 @@ async function commanders() {
         .option('--simu-abandoned <from chain name>', 'simulate an error happening when submitting a message to any receiver on Flow', list)
         .option('--simu-submit-hidden <numbers>', 'simulate the hidden step in submitting a message with `Hidden & Reveal` SQoS Item. Input example: \'[1,2,3,4]\'', list_line)
         .option('--simu-submit-reveal <random number>|<numbers>', 'simulate the reveal step in submitting a message with `Hidden & Reveal` SQoS Item. The `random number` can be found in the output of the previous hidden step. Input example: \'11223344|[1,2,3,4]\'', list_line)
+        .option('--simu-make-challenge <msgID>,<fromChain>', 'simulate two challenges are made by Alice and Bob to a certain message. Input example: 1,POLKADOT', list)
         .option('--trigger', 'trigger an execution manually')
         // .option('--example <n>', 'this is an example of commanders')
         .parse(process.argv);
@@ -479,6 +480,15 @@ async function commanders() {
     } else if (program.opts().trigger) {
         console.log('trigger an execution manually');
         await simubase.trigger();
+    } else if (program.opts().simuMakeChallenge) {
+        if (program.opts().simuMakeChallenge.length != 2) {
+            console.log('2 arguments are needed, but ' + program.opts().simuMakeChallenge.length + ' provided');
+            return;
+        }
+
+        console.log('simulate two challenges are made by Alice and Bob to a certain message');
+        await simuChallenge('Alice', program.opts().simuMakeChallenge[0], program.opts().simuMakeChallenge[1], '0x01cf0e2f2f715450');
+        await simuChallenge('Bob', program.opts().simuMakeChallenge[0], program.opts().simuMakeChallenge[1], '0x01cf0e2f2f715450');
     }
     // else if (program.opts().example) {
     //     console.log('example: ', program.opts().example);
